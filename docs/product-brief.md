@@ -30,7 +30,19 @@ their transport/forwarding software.
 - Enter them into the forwarding software the company already uses, so staff
   don't re-type them.
 
-### 4. Sales intelligence
+### 4. Transport orders (заявки) after the client confirms
+- **Client side:** draft an email asking the client to send an official
+  заявка за транспорт, with a pre-filled заявка attached (agreed terms and the
+  forwarder's **selling price**) that the client only needs to sign and stamp.
+  When the signed заявка comes back, check it against the agreed terms.
+- **Carrier side:** generate and send the заявка към превозвач with the
+  carrier's **net price** (taken from the carrier's own confirmation), truck and
+  trailer plates, and terms (CMR, payment period).
+- Guard rule: the selling price never appears on a carrier document, and the
+  carrier price never appears on a client document.
+- Data from both signed заявки is filled into the TMS order.
+
+### 5. Sales intelligence
 For a new request, show a summary of similar past transports:
 - What the company **sold** similar transports for (customer price).
 - What the **net offer** from the trucking company (carrier cost) was.
