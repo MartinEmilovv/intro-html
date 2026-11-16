@@ -24,6 +24,10 @@ var EXTRACT_SCHEMA = {
     pallets: { type: ['integer', 'null'] },
     weight_kg: { type: ['number', 'null'] },
     truck_type: { type: 'string', enum: TRUCK_TYPES },
+    contact_name: {
+      type: 'string',
+      description: 'Name of the person who wrote the email, as they sign it, in its original script; empty if not given'
+    },
     missing_info: {
       type: 'array',
       items: { type: 'string' },
@@ -32,7 +36,7 @@ var EXTRACT_SCHEMA = {
   },
   required: ['is_transport_request', 'language', 'from_city', 'from_country', 'from_address',
     'to_city', 'to_country', 'to_address', 'loading_date', 'delivery_date', 'cargo',
-    'pallets', 'weight_kg', 'truck_type', 'missing_info'],
+    'pallets', 'weight_kg', 'truck_type', 'contact_name', 'missing_info'],
   additionalProperties: false
 };
 

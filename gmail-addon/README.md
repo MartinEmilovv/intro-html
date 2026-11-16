@@ -25,7 +25,8 @@ the draft opens in Gmail for you to check and send.
 | `Main.gs` | The sidebar cards and buttons |
 | `Claude.gs` | The two Claude API calls: read the request, write the offer |
 | `History.gs` | Reads the price history sheet and finds similar transports (plain code, no AI) |
-| `Config.gs` | Default settings (sheet ID, signature, offer terms); Script Properties override them |
+| `Config.gs` | Default settings (sheet ID, signature, offer terms, acknowledgment texts); Script Properties override them |
+| `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `sample-history.csv` | Example price history (made-up numbers) to start the sheet |
 | `test/history.test.js` | Tests for the matching and pricing logic: `node --test test/history.test.js` |
 
@@ -111,6 +112,35 @@ Send yourself this email, open it, and click **Analyze request**:
 
 With the sample history you should see 5 similar BG → DE transports and a
 suggested price of €2,500.
+
+## Automatic acknowledgments
+
+Every 10 minutes the add-on checks new inbox emails. When one is a new transport
+request, it replies straight away with a fixed message, using the sender's name if
+they signed one:
+
+> Здравейте, Иван Петров,
+>
+> Благодарим Ви за запитването. Работим по него и ще Ви изпратим оферта възможно най-скоро.
+>
+> Поздрави,
+
+- **Turn on:** in the Apps Script editor, choose `setUpAutoReply` in the function
+  list and click **Run**. Google asks for Gmail permission the first time.
+- **Turn off:** run `stopAutoReply`.
+- **Edit the wording** in `ACK_TEMPLATES` in `Config.gs` (Bulgarian and English;
+  other languages get English).
+- **What gets a reply:** only new threads (one message, nothing from you yet) from
+  the last hour, in the inbox, not in Promotions/Social/Updates/Forums, not from
+  mailing lists or no-reply addresses, and only if Claude says it's a transport
+  request. Claude never writes the text that is sent; it only decides whether to
+  send it, the language and the name.
+- **Labels:** every checked thread gets `Freight Assistant/Checked`, so it's only
+  looked at once; acknowledged ones also get `Freight Assistant/Acknowledged`.
+- **Testing with your own emails:** emails you send yourself are skipped. Set
+  `ACK_INCLUDE_OWN_EMAILS: true` in `Config.gs` to test, then set it back.
+- **Cost:** each new inbox email that passes the filters is one Claude call
+  (about 1–2 cents).
 
 ## Known limits of this MVP
 
