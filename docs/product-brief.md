@@ -48,6 +48,25 @@ For a new request, show a summary of similar past transports:
 - What the **net offer** from the trucking company (carrier cost) was.
 - From these, the margin, to help price the new offer.
 
+## Delivery approach
+
+No new software for the forwarder to adopt: the product lives inside the two
+places they already work.
+
+- **Email add-in (Outlook / Gmail):** where offers, replies, заявки and the
+  price summary appear. One build covers almost every customer. This is the
+  first thing to build and the way customers try the product.
+- **TMS integrations:** built one TMS at a time, starting with the most common
+  among early customers. Per TMS, in order of preference: API, import file
+  (CSV/Excel/XML), browser extension that fills the order form, copy-paste
+  output as a fallback.
+- **Price history without a TMS integration:** a one-time export from the TMS
+  or Excel, so sales intelligence works before any TMS integration exists.
+- **Behind the scenes:** our own backend (AI, price history, price-separation
+  checks) and a small admin page for settings, users and заявка templates.
+  Forwarders don't work in it day to day.
+- **Possible channel:** partnerships with TMS vendors (API access, distribution).
+
 ## Open questions
 
 - Which forwarding/TMS software do target customers use, and does it have an API,
