@@ -110,6 +110,8 @@ function draftOffer_(request, priceEur, originalEmail, settings) {
     'Extracted request details:\n' + JSON.stringify(request, null, 2) + '\n\n' +
     'Offer price: ' + priceEur + ' EUR, excluding VAT\n' +
     'Offer terms: ' + settings.offerTerms + '\n' +
-    'Sign the email as:\n' + settings.signature;
+    (settings.signature
+      ? 'Sign the email as:\n' + settings.signature
+      : 'End with a closing greeting only, with no name or signature.');
   return callClaude_(DRAFT_SYSTEM, text, 'low', null).trim();
 }

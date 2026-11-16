@@ -25,6 +25,7 @@ the draft opens in Gmail for you to check and send.
 | `Main.gs` | The sidebar cards and buttons |
 | `Claude.gs` | The two Claude API calls: read the request, write the offer |
 | `History.gs` | Reads the price history sheet and finds similar transports (plain code, no AI) |
+| `Config.gs` | Default settings (sheet ID, signature, offer terms); Script Properties override them |
 | `sample-history.csv` | Example price history (made-up numbers) to start the sheet |
 | `test/history.test.js` | Tests for the matching and pricing logic: `node --test test/history.test.js` |
 
@@ -64,13 +65,15 @@ Columns (first tab, first row is the header):
    **Show "appsscript.json" manifest file in editor**.
 3. Back in the **Editor**, replace the contents of `appsscript.json` with this
    folder's `appsscript.json`.
-4. Rename `Code.gs` to `Main` and paste in `Main.gs`. Add two more script files
-   (**+** → Script) named `Claude` and `History`, and paste in `Claude.gs` and
-   `History.gs`. Save.
+4. Rename `Code.gs` to `Main` and paste in `Main.gs`. Add three more script files
+   (**+** → Script) named `Claude`, `History` and `Config`, and paste in
+   `Claude.gs`, `History.gs` and `Config.gs`. Save. (All four can also go into one
+   file: Apps Script treats them as one program.)
 
 ### 4. Add your settings
 
-In **Project Settings → Script Properties**, add:
+In **Project Settings → Script Properties**, add your API key. The other settings
+can go either here or in `Config.gs`:
 
 | Property | Value |
 |---|---|

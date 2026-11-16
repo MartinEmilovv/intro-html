@@ -10,10 +10,11 @@ var CACHE_SECONDS = 6 * 60 * 60;
 
 function getSettings_() {
   var p = PropertiesService.getScriptProperties();
+  var get = function (name) { return p.getProperty(name) || CONFIG[name]; };
   return {
-    historySheetId: p.getProperty('HISTORY_SHEET_ID') || '',
-    signature: p.getProperty('SIGNATURE') || '',
-    offerTerms: p.getProperty('OFFER_TERMS') || 'Price excludes VAT. Offer valid for 48 hours.'
+    historySheetId: get('HISTORY_SHEET_ID'),
+    signature: get('SIGNATURE'),
+    offerTerms: get('OFFER_TERMS')
   };
 }
 
