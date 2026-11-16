@@ -1,0 +1,74 @@
+/**
+ * Price history: reads past transports from a Google Sheet and finds ones
+ * similar to a new request. Plain code, no AI, so the numbers are exact.
+ *
+ * Sheet layout (first tab, header row, any column order):
+ *   date | from_city | from_country | to_city | to_country | truck_type | sold_eur | carrier_eur
+ * Cities in English, countries as 2-letter codes (BG, DE), truck_type one of
+ * TRUCK_TYPES in Claude.gs.
+ */
+
+var MAX_SIMILAR = 5;
+
+/** Reads all rows of the history sheet as objects keyed by header name. */
+function readHistory_(sheetId) {
+  var values = SpreadsheetApp.openById(sheetId).getSheets()[0].getDataRange().getValues();
+  return rowsToObjects_(values);
+}
+
+function rowsToObjects_(values) {
+  var headers = values[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  return values.slice(1)
+    .filter(function (row) { return row.join('') !== ''; })
+    .map(function (row) {
+      var obj = {};
+      headers.forEach(function (h, i) { obj[h] = row[i]; });
+      return obj;
+    });
+}
+
+function norm_(s) {
+  return String(s == null ? '' : s).trim().toLowerCase();
+}
+
+function toTime_(d) {
+  if (d instanceof Date) return d.getTime();
+  var t = Date.parse(String(d));
+  return isNaN(t) ? 0 : t;
+}
+
+/**
+ * Past transports on the same country pair, ranked by how closely they match:
+ * same destination city (+3), same loading city (+2), same truck type (+1),
+ * then most recent first.
+ */
+function findSimilar_(request, history) {
+  var fromC = norm_(request.from_country), toC = norm_(request.to_country);
+  return history
+    .filter(function (h) {
+      return norm_(h.from_country) === fromC && norm_(h.to_country) === toC &&
+        Number(h.sold_eur) > 0 && Number(h.carrier_eur) > 0;
+    })
+    .map(function (h) {
+      var score = 0;
+      if (norm_(h.to_city) === norm_(request.to_city)) score += 3;
+      if (norm_(h.from_city) === norm_(request.from_city)) score += 2;
+      if (norm_(h.truck_type) === norm_(request.truck_type)) score += 1;
+      return { row: h, score: score, time: toTime_(h.date) };
+    })
+    .sort(function (a, b) { return b.score - a.score || b.time - a.time; })
+    .slice(0, MAX_SIMILAR)
+    .map(function (x) { return x.row; });
+}
+
+/** Average sold and carrier price of the similar transports, rounded to €10. */
+function suggestPrice_(similar) {
+  if (similar.length === 0) return null;
+  var avg = function (key) {
+    var sum = similar.reduce(function (s, h) { return s + Number(h[key]); }, 0);
+    return Math.round(sum / similar.length / 10) * 10;
+  };
+  var sell = avg('sold_eur');
+  var carrier = avg('carrier_eur');
+  return { sell: sell, carrier: carrier, margin: sell - carrier, basedOn: similar.length };
+}

@@ -1,0 +1,25 @@
+{
+  "timeZone": "Europe/Sofia",
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/gmail.addons.execute",
+    "https://www.googleapis.com/auth/gmail.addons.current.message.readonly",
+    "https://www.googleapis.com/auth/gmail.addons.current.action.compose",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/spreadsheets.readonly"
+  ],
+  "urlFetchWhitelist": ["https://api.anthropic.com/"],
+  "addOns": {
+    "common": {
+      "name": "Freight Assistant",
+      "logoUrl": "https://www.gstatic.com/images/icons/material/system/1x/local_shipping_black_48dp.png",
+      "homepageTrigger": { "runFunction": "onHomepage" }
+    },
+    "gmail": {
+      "contextualTriggers": [
+        { "unconditional": {}, "onTriggerFunction": "onGmailMessage" }
+      ]
+    }
+  }
+}

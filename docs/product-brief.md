@@ -84,3 +84,10 @@ places they already work.
 [`mockups/freight-assistant.html`](../mockups/freight-assistant.html): a clickable
 walkthrough of one request (inbox sidebar, drafted offer, заявки to client and
 carrier, TMS order). Open it in a browser. All data in it is made up.
+
+## MVP
+
+[`gmail-addon/`](../gmail-addon/): Gmail add-on (Google Apps Script). Reads a
+transport request, shows similar past transports from a Google Sheet with sold
+price, carrier price and margin, suggests a price, and creates the offer as a
+reply draft. Setup steps in its README.
