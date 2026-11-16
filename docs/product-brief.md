@@ -91,3 +91,37 @@ carrier, TMS order). Open it in a browser. All data in it is made up.
 transport request, shows similar past transports from a Google Sheet with sold
 price, carrier price and margin, suggests a price, and creates the offer as a
 reply draft. Setup steps in its README.
+
+Built so far in the Gmail add-on:
+- Offer: read request, similar transports, suggested price, offer reply draft.
+- Automatic acknowledgment of new transport requests (fixed template, by name).
+- Carriers for the route (Carriers tab) and price request drafts to them.
+
+## To-do
+
+**Waiting on Martin**
+- [ ] **Viber test** (decides how "Send via Viber" is built): on the Windows PC with
+  Viber Desktop, paste `viber://chat?number=%2B359888123456&draft=Тест%20от%20Freight%20Assistant`
+  (a real contact's number) into the browser and report: (a) chat opens with the text
+  typed in, (b) chat opens empty, (c) nothing opens. Don't press Send.
+- [ ] Share real заявки examples (client's заявка за транспорт and заявка към превозвач),
+  anonymized, in Google Drive, and say whether the order number comes from the TMS
+  or is a running number.
+- [ ] Test the acknowledgment and carriers features in Gmail.
+
+**Next to build**
+- [ ] Заявки: "Order confirmed" step in the sidebar. Drafts to the client (request for
+  their official заявка, pre-filled PDF at the selling price) and to the carrier
+  (заявка към превозвач PDF at the carrier price), from Google Docs templates with
+  `{{placeholders}}`. Always by email. Add the confirmed transport to the History tab.
+- [ ] "Send via Viber" button per carrier (Viber Desktop link with the request
+  pre-filled, or open chat + copy text), depending on the Viber test.
+- [ ] Field in the sidebar to record a carrier's quoted price (from Viber or phone).
+
+**Later**
+- [ ] Freight exchanges: ask Speditor.net whether it has an API; TIMOCOM partner
+  integration. Transporeon as a source of incoming requests.
+- [ ] Mailbox-level (IMAP) connection for clients not on Gmail/Outlook, saving drafts
+  into any mailbox.
+- [ ] Outlook add-in. TMS integrations.
+- [ ] Martin's forgotten idea, when it comes back.
