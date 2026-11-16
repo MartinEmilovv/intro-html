@@ -3,14 +3,15 @@
  * similar to a new request. Plain code, no AI, so the numbers are exact.
  *
  * Sheet layout (first tab, header row, any column order):
- *   date | from_city | from_country | to_city | to_country | truck_type | sold_eur | carrier_eur
+ *   date | from_city | from_country | to_city | to_country | truck_type | sold_eur | carrier_eur | carrier
+ * The carrier column is optional and must match a name on the Carriers tab (Carriers.gs).
  * Cities in English, countries as 2-letter codes (BG, DE), truck_type one of
  * TRUCK_TYPES in Claude.gs.
  */
 
 var MAX_SIMILAR = 5;
 
-/** Reads all rows of the history sheet as objects keyed by header name. */
+/** Reads all rows of the history tab (the first tab) as objects keyed by header name. */
 function readHistory_(sheetId) {
   var values = SpreadsheetApp.openById(sheetId).getSheets()[0].getDataRange().getValues();
   return rowsToObjects_(values);
@@ -40,9 +41,9 @@ function toTime_(d) {
 /**
  * Past transports on the same country pair, ranked by how closely they match:
  * same destination city (+3), same loading city (+2), same truck type (+1),
- * then most recent first.
+ * then most recent first. Returns {row, score, time} for each.
  */
-function findSimilar_(request, history) {
+function rankHistory_(request, history) {
   var fromC = norm_(request.from_country), toC = norm_(request.to_country);
   return history
     .filter(function (h) {
@@ -56,7 +57,12 @@ function findSimilar_(request, history) {
       if (norm_(h.truck_type) === norm_(request.truck_type)) score += 1;
       return { row: h, score: score, time: toTime_(h.date) };
     })
-    .sort(function (a, b) { return b.score - a.score || b.time - a.time; })
+    .sort(function (a, b) { return b.score - a.score || b.time - a.time; });
+}
+
+/** The closest past transports, for the price suggestion. */
+function findSimilar_(request, history) {
+  return rankHistory_(request, history)
     .slice(0, MAX_SIMILAR)
     .map(function (x) { return x.row; });
 }

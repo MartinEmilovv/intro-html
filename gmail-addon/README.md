@@ -16,6 +16,8 @@ the draft opens in Gmail for you to check and send.
    transports, rounded to €10.
 4. Change the price if you want, then click **Create reply draft**. Claude writes
    the offer in the customer's language and it opens as a reply draft.
+5. Under **Carriers for this route**, tick the carriers to ask and click **Draft
+   price requests**: one draft per carrier lands in your Drafts folder.
 
 ## Files
 
@@ -27,8 +29,10 @@ the draft opens in Gmail for you to check and send.
 | `History.gs` | Reads the price history sheet and finds similar transports (plain code, no AI) |
 | `Config.gs` | Default settings (sheet ID, signature, offer terms, acknowledgment texts); Script Properties override them |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
-| `sample-history.csv` | Example price history (made-up numbers) to start the sheet |
-| `test/history.test.js` | Tests for the matching and pricing logic: `node --test test/history.test.js` |
+| `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
+| `sample-history.csv` | Example price history (made-up numbers) for the History tab |
+| `sample-carriers.csv` | Example carriers (made-up companies, `.example` emails) for the Carriers tab |
+| `test/` | Tests for matching, pricing, acknowledgments and carriers: `node --test test/*.test.js` |
 
 ## Setup (about 15 minutes)
 
@@ -57,6 +61,17 @@ Columns (first tab, first row is the header):
 | `truck_type` | curtainsider | One of: curtainsider, reefer, mega, box, flatbed, other |
 | `sold_eur` | 2450 | What you charged the client |
 | `carrier_eur` | 2050 | What the carrier charged you |
+| `carrier` | Пример Транс ЕООД | Optional. The carrier's name, exactly as on the Carriers tab |
+
+Add a second tab named **Carriers** (import `sample-carriers.csv` into it to start):
+
+| Column | Example | Notes |
+|---|---|---|
+| `carrier` | Пример Транс ЕООД | Same name as in the history tab's `carrier` column |
+| `contact_person` | Георги Иванов | Used in the greeting of price requests |
+| `email` | georgi@… | Carriers without an email are listed but can't be ticked |
+| `phone` | +359 88 … | Shown in the sidebar. In Google Sheets, type a `'` before a leading `+` |
+| `language` | bg | `bg` or `en`: the language of price requests (empty = bg) |
 
 ### 3. Create the Apps Script project
 
@@ -142,6 +157,21 @@ they signed one:
 - **Cost:** each new inbox email that passes the filters is one Claude call
   (about 1–2 cents).
 
+## Price requests to carriers
+
+After **Analyze request**, the sidebar lists up to 6 carriers who ran transports on
+the same country pair, best match first (same ranking as the price suggestion):
+their contact person and phone, their price on the closest route, and how many
+times they've run this country pair. The top 3 with an email are pre-ticked.
+
+**Draft price requests** creates one Gmail draft per ticked carrier, greeting the
+contact by name, in the carrier's language. Nothing is sent.
+
+The request is written only from the load: route (cities and countries), dates,
+cargo, pallets, weight and truck type. Your selling price, your client's name and
+the exact addresses are never passed to Claude for this, so they can't end up in a
+carrier email.
+
 ## Known limits of this MVP
 
 - **Matching is by country pair, city name and truck type, not distance.** City
@@ -149,7 +179,7 @@ they signed one:
 - **Each button has about 30 seconds** before Gmail gives up. If you see a timeout,
   click again.
 - **History is a one-time sheet.** Orders aren't added to it automatically yet.
-- **Not included yet:** carrier requests, заявки, TMS integration, Outlook.
+- **Not included yet:** заявки, freight exchanges, TMS integration, Outlook.
 - **The prompts have not been tested against real emails yet.** Your first
   real tests will show what to adjust in `Claude.gs`.
 

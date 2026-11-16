@@ -90,9 +90,12 @@ function onAnalyze(e) {
   }
 
   var similar = [];
+  var carriers = [];
   if (settings.historySheetId) {
     try {
-      similar = findSimilar_(request, readHistory_(settings.historySheetId));
+      var history = readHistory_(settings.historySheetId);
+      similar = findSimilar_(request, history);
+      carriers = rankCarriers_(request, history, readCarriers_(settings.historySheetId));
     } catch (err) {
       return notify_('Could not read the price history sheet: ' + err.message);
     }
@@ -101,13 +104,13 @@ function onAnalyze(e) {
 
   CacheService.getUserCache().put('req:' + e.gmail.messageId, JSON.stringify(request), CACHE_SECONDS);
 
-  var card = buildAnalysisCard_(request, similar, suggestion, settings);
+  var card = buildAnalysisCard_(request, similar, suggestion, carriers, settings);
   return CardService.newActionResponseBuilder()
     .setNavigation(CardService.newNavigation().pushCard(card))
     .build();
 }
 
-function buildAnalysisCard_(r, similar, suggestion, settings) {
+function buildAnalysisCard_(r, similar, suggestion, carriers, settings) {
   var route = [r.from_city, r.from_country].filter(String).join(', ') + ' → ' +
     [r.to_city, r.to_country].filter(String).join(', ');
   var load = [r.cargo, r.pallets != null ? r.pallets + ' pallets' : '',
@@ -162,7 +165,76 @@ function buildAnalysisCard_(r, similar, suggestion, settings) {
     .addSection(details)
     .addSection(history)
     .addSection(offer)
+    .addSection(buildCarriersSection_(carriers, settings))
     .build();
+}
+
+function buildCarriersSection_(carriers, settings) {
+  var section = CardService.newCardSection().setHeader('Carriers for this route');
+  if (!settings.historySheetId || carriers.length === 0) {
+    return section.addWidget(CardService.newTextParagraph().setText(
+      'No carriers on this country pair yet. Add a carrier column to your history ' +
+      'and a Carriers tab with their contacts.'));
+  }
+
+  var withEmail = 0;
+  var pick = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.CHECK_BOX)
+    .setFieldName('carriers')
+    .setTitle('Ask for a price');
+  carriers.forEach(function (c) {
+    var b = c.best;
+    section.addWidget(CardService.newDecoratedText()
+      .setTopLabel([c.contact, c.phone].filter(String).join(' · ') || 'No contact details')
+      .setText('<b>' + c.name + '</b>')
+      .setBottomLabel(b.from_city + ' → ' + b.to_city + ' · ' + b.truck_type + ' · ' + month_(b.date) +
+        ': ' + eur_(b.carrier_eur) + ' · ' + c.runs + (c.runs === 1 ? ' run' : ' runs') + ' on this route')
+      .setWrapText(true));
+    if (c.email) {
+      pick.addItem(c.name, c.key, withEmail < PRESELECT_CARRIERS);
+      withEmail += 1;
+    }
+  });
+
+  if (withEmail === 0) {
+    return section.addWidget(CardService.newTextParagraph().setText(
+      'None of these carriers has an email on the Carriers tab.'));
+  }
+  return section
+    .addWidget(pick)
+    .addWidget(CardService.newTextButton()
+      .setText('Draft price requests')
+      .setOnClickAction(CardService.newAction().setFunctionName('onDraftCarrierRequests')));
+}
+
+/** Creates one price request draft per ticked carrier. Never sends. */
+function onDraftCarrierRequests(e) {
+  var inputs = e.commonEventObject.formInputs || {};
+  var picked = inputs.carriers ? inputs.carriers.stringInputs.value : [];
+  if (picked.length === 0) return notify_('Tick at least one carrier.');
+
+  var cached = CacheService.getUserCache().get('req:' + e.gmail.messageId);
+  if (!cached) return notify_('The analysis expired. Click Analyze request again.');
+  var request = JSON.parse(cached);
+
+  var settings = getSettings_();
+  var history = readHistory_(settings.historySheetId);
+  var chosen = rankCarriers_(request, history, readCarriers_(settings.historySheetId))
+    .filter(function (c) { return c.email && picked.indexOf(c.key) !== -1; });
+
+  var texts = {};
+  try {
+    chosen.forEach(function (c) {
+      if (!texts[c.language]) texts[c.language] = draftCarrierRequest_(request, c.language);
+      var t = texts[c.language];
+      GmailApp.createDraft(c.email, t.subject,
+        buildCarrierEmail_(c.language, c.contact, t.body, settings.signature));
+    });
+  } catch (err) {
+    return notify_(err.message);
+  }
+  return notify_('Created ' + chosen.length + (chosen.length === 1 ? ' draft' : ' drafts') +
+    ' in your Drafts folder. Check them before sending.');
 }
 
 /** Writes the offer with Claude and opens it as a reply draft. Never sends. */
