@@ -108,6 +108,8 @@ Built so far in the Gmail add-on:
   anonymized, in Google Drive, and say whether the order number comes from the TMS
   or is a running number.
 - [ ] Test the acknowledgment and carriers features in Gmail.
+- [ ] Find out which TMS the target forwarders use, and for each: does it have an API
+  or a file import (Excel/CSV/XML), and does it run in a browser or as a desktop program?
 
 **Next to build**
 - [ ] Заявки: "Order confirmed" step in the sidebar. Drafts to the client (request for
@@ -117,11 +119,17 @@ Built so far in the Gmail add-on:
 - [ ] "Send via Viber" button per carrier (Viber Desktop link with the request
   pre-filled, or open chat + copy text), depending on the Viber test.
 - [ ] Field in the sidebar to record a carrier's quoted price (from Viber or phone).
+- [ ] Transport file: when an order is confirmed, create a Google Drive folder per
+  transport (order number + route) with both заявки, the client and carrier email
+  threads as PDFs, and a summary of the order data. First step towards TMS entry.
 
 **Later**
 - [ ] Freight exchanges: ask Speditor.net whether it has an API; TIMOCOM partner
   integration. Transporeon as a source of incoming requests.
 - [ ] Mailbox-level (IMAP) connection for clients not on Gmail/Outlook, saving drafts
   into any mailbox.
-- [ ] Outlook add-in. TMS integrations.
+- [ ] Outlook add-in.
+- [ ] Create the transport file in the TMS with documents attached, depending on what
+  each TMS allows: API (best), file import, browser extension filling the form.
+  Avoid automating desktop-only TMS programs.
 - [ ] Martin's forgotten idea, when it comes back.
