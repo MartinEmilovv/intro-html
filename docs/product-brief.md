@@ -123,6 +123,14 @@ Built so far in the Gmail add-on:
   transport (order number + route) with both заявки, the client and carrier email
   threads as PDFs, and a summary of the order data. First step towards TMS entry.
 
+**Before selling to clients**
+- [ ] Move the Anthropic API key to a small server of ours: the add-on calls our server,
+  only the server calls Claude. Never ship the key inside a client's copy of the script.
+  The server also tracks usage per client, enforces limits and can switch a client off.
+  (Same server as the IMAP mailbox connection.)
+- [ ] Set a monthly spending limit in console.anthropic.com.
+- [ ] Measure real Claude cost per forwarder per month to set the subscription price.
+
 **Later**
 - [ ] Freight exchanges: ask Speditor.net whether it has an API; TIMOCOM partner
   integration. Transporeon as a source of incoming requests.
