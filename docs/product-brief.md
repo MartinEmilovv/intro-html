@@ -78,3 +78,9 @@ places they already work.
 - What defines "similar" transports (route, distance, cargo type, truck type, season)?
 - Pricing model and first pilot customer(s).
 - Data protection/GDPR requirements and where data may be hosted.
+
+## Mockup
+
+[`mockups/freight-assistant.html`](../mockups/freight-assistant.html): a clickable
+walkthrough of one request (inbox sidebar, drafted offer, заявки to client and
+carrier, TMS order). Open it in a browser. All data in it is made up.

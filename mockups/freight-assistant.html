@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Freight Assistant Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a step rail on top, then one "screen" per step: the forwarder's email client with our sidebar, the drafted reply, then their TMS order form. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f6f8fa; --line:#d8dee5;
+  --fg:#17212b; --muted:#5b6876; --accent:#1d5b86; --accent-soft:#e3eef7;
+  --ours:#b8650a; --ours-soft:#fcf1e3; --good:#2c7a4b; --good-soft:#e5f3ea;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --surface:#18212a; --surface-2:#1e2833; --line:#2e3a46;
+  --fg:#e3e9ef; --muted:#9aa8b6; --accent:#6fb0de; --accent-soft:#1b3346;
+  --ours:#f0a24a; --ours-soft:#3a2a17; --good:#62c48a; --good-soft:#17321f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --surface:#18212a; --surface-2:#1e2833; --line:#2e3a46;
+  --fg:#e3e9ef; --muted:#9aa8b6; --accent:#6fb0de; --accent-soft:#1b3346;
+  --ours:#f0a24a; --ours-soft:#3a2a17; --good:#62c48a; --good-soft:#17321f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:.01em}
+h1{font-size:2rem;font-weight:700;line-height:1.1}
+.intro{display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.intro p{margin:0;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;border:2px solid var(--ours);background:var(--ours-soft)}
+.sw.theirs{border-color:var(--line);background:var(--surface)}
+
+/* step rail */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.docs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.doc-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.doc-col h3{font-size:1.15rem}
+.who{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:999px;align-self:flex-start}
+.who.client{background:var(--accent-soft);color:var(--accent)} .who.carrier{background:var(--good-soft);color:var(--good)}
+.paper{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:16px;display:flex;flex-direction:column;gap:10px;font-size:.86rem;box-shadow:0 1px 0 var(--line),0 3px 0 -1px var(--surface-2),0 4px 0 -1px var(--line)}
+.paper h4{margin:0;font-family:var(--f-display);font-size:1.1rem;text-align:center;letter-spacing:.04em;text-transform:uppercase}
+.paper .no{text-align:center;font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.paper dl{font-size:.84rem}
+.amount{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-top:1px solid var(--line);padding-top:8px}
+.amount b{font-family:var(--f-mono);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.client .amount b{color:var(--accent)} .carrier .amount b{color:var(--good)}
+.sign{display:flex;justify-content:space-between;gap:12px;font-size:.75rem;color:var(--muted);padding-top:14px}
+.sign span{border-top:1px solid var(--muted);padding-top:2px;flex:1;text-align:center}
+.mini-mail{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:.86rem;white-space:pre-line}
+.mini-mail .meta{display:block;margin-bottom:6px;white-space:normal}
+.guard{border:1px solid var(--ours);background:var(--ours-soft);border-radius:8px;padding:12px 14px;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+.guard b{color:var(--ours);font-family:var(--f-display);font-size:1.02rem;letter-spacing:.02em}
+.pending{font-size:.84rem;padding:8px 10px;border-radius:7px;background:var(--surface-2);border:1px dashed var(--line);color:var(--muted)}
+.step{font:inherit;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:10px 12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.step b{font-family:var(--f-display);font-size:1.05rem;color:var(--fg);font-weight:600}
+.step small{font-size:.8rem}
+.step[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent);background:var(--accent-soft)}
+.step:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.where{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600}
+
+/* app window */
+.window{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.chrome{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+.dots{display:flex;gap:5px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 360px}
+.pane{padding:20px;min-width:0}
+.mail-head{display:flex;flex-direction:column;gap:4px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}
+.mail-head h2{font-size:1.3rem}
+.meta{font-size:.85rem;color:var(--muted)}
+.mail-body{white-space:pre-line;font-size:.95rem;max-width:62ch}
+mark{background:var(--ours-soft);color:inherit;border-bottom:2px solid var(--ours);padding:0 2px;border-radius:2px}
+
+/* our sidebar */
+.side{background:var(--ours-soft);border-left:3px solid var(--ours);padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.side-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.side-head h3{font-size:1.15rem;color:var(--ours)}
+.tag{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ours)}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.block h4{margin:0;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.88rem}
+dt{color:var(--muted)} dd{margin:0;font-weight:500}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums}
+th{font-weight:600;color:var(--muted);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--f-mono);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;font-family:var(--f-body)}
+tr.avg td{font-weight:600;border-bottom:none}
+.price{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.price div{display:flex;flex-direction:column;gap:2px}
+.price span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.price b{font-family:var(--f-mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.price .sell b{color:var(--accent)} .price .margin b{color:var(--good)}
+.note{font-size:.8rem;color:var(--muted);margin:0}
+.btn{font:inherit;font-weight:600;font-size:.9rem;border-radius:7px;padding:9px 14px;cursor:pointer;border:1px solid var(--ours);background:var(--ours);color:#fff}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+
+/* draft */
+.draft{border:2px dashed var(--ours);background:var(--ours-soft);border-radius:8px;padding:14px;white-space:pre-line;max-width:64ch;font-size:.95rem}
+.field-row{display:flex;gap:8px;font-size:.88rem;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--line)}
+.field-row b{color:var(--fg);font-weight:500}
+
+/* TMS */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.form input{font:inherit;font-size:.92rem;text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg);padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface)}
+.form input.filled{background:var(--ours-soft);border-color:var(--ours)}
+.status{display:flex;align-items:center;gap:8px;font-size:.88rem;padding:10px 12px;border-radius:7px;background:var(--good-soft);color:var(--good);font-weight:500}
+
+.explain{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.explain div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.explain h3{font-size:1.05rem}
+.explain p{margin:0;font-size:.9rem;color:var(--muted)}
+.example{font-size:.8rem;color:var(--muted)}
+
+@media (max-width:820px){
+  .split{grid-template-columns:minmax(0,1fr)}
+  .side{border-left:none;border-top:3px solid var(--ours)}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .docs{grid-template-columns:minmax(0,1fr)}
+  h1{font-size:1.6rem}
+}
+@media (prefers-reduced-motion:no-preference){.screen{animation:fade .25s ease}}
+@keyframes fade{from{opacity:.4}to{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>How the product shows up in a forwarder's day</h1>
+    <p>One transport request, followed through the places a forwarder already works: their inbox, the заявки they exchange with client and carrier, and their transport software (TMS). Click through the steps.</p>
+    <div class="legend">
+      <span><i class="sw"></i> Added by your product</span>
+      <span><i class="sw theirs"></i> Software they already use</span>
+    </div>
+    <p class="example">All companies, prices and history below are made-up examples.</p>
+  </header>
+
+  <nav class="steps" role="tablist" aria-label="Steps">
+    <button class="step" role="tab" id="t1" aria-selected="true" data-go="1"><span class="where">In their inbox</span><b>1. Request arrives</b><small>Sidebar reads it and prices it</small></button>
+    <button class="step" role="tab" id="t2" aria-selected="false" data-go="2"><span class="where">In their inbox</span><b>2. Offer drafted</b><small>Reply waits in Drafts for review</small></button>
+    <button class="step" role="tab" id="t3" aria-selected="false" data-go="3"><span class="where">Inbox + documents</span><b>3. Заявки prepared</b><small>One to the client, one to the carrier</small></button>
+    <button class="step" role="tab" id="t4" aria-selected="false" data-go="4"><span class="where">In their TMS</span><b>4. Order entered</b><small>Fields filled, no retyping</small></button>
+  </nav>
+
+  <!-- STEP 1 -->
+  <section class="screen" id="s1" role="tabpanel" aria-labelledby="t1">
+    <div class="window">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span>Email client (Outlook or Gmail) · Inbox</div>
+      <div class="split">
+        <div class="pane">
+          <div class="mail-head">
+            <h2>Запитване за транспорт София – Дуисбург</h2>
+            <div class="meta">Иван Петров · Стройматериали Юг ООД · днес, 09:14</div>
+          </div>
+          <div class="mail-body">Здравейте,
+
+Моля за оферта за следния превоз:
+
+Товарене: <mark>София, кв. Враждебна</mark>, <mark>12.11</mark>
+Разтоварване: <mark>Дуисбург, Германия</mark>, до <mark>15.11</mark>
+Стока: <mark>строителни материали на палети, 33 палета, 22 т</mark>
+Тип: <mark>тент, 13,6 м</mark>
+
+Благодаря,
+Иван Петров</div>
+        </div>
+        <aside class="side" aria-label="Your product sidebar">
+          <div class="side-head"><h3>Freight assistant</h3><span class="tag">Your product</span></div>
+
+          <div class="block">
+            <h4>Read from the email</h4>
+            <dl>
+              <dt>Route</dt><dd>Sofia, BG → Duisburg, DE · ~1,850 km</dd>
+              <dt>Loading</dt><dd>12 Nov</dd>
+              <dt>Delivery</dt><dd>by 15 Nov</dd>
+              <dt>Cargo</dt><dd>33 pallets, 22 t, building materials</dd>
+              <dt>Truck</dt><dd>Curtainsider, 13.6 m (FTL)</dd>
+            </dl>
+          </div>
+
+          <div class="block">
+            <h4>Similar transports you've done</h4>
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Route</th><th>Sold</th><th>Carrier</th><th>Margin</th></tr></thead>
+                <tbody>
+                  <tr><td>Sofia → Dortmund · Sep</td><td>€2,450</td><td>€2,050</td><td>€400</td></tr>
+                  <tr><td>Plovdiv → Duisburg · Aug</td><td>€2,600</td><td>€2,150</td><td>€450</td></tr>
+                  <tr><td>Sofia → Cologne · Jul</td><td>€2,380</td><td>€2,000</td><td>€380</td></tr>
+                  <tr><td>Sofia → Essen · Jun</td><td>€2,500</td><td>€2,120</td><td>€380</td></tr>
+                  <tr class="avg"><td>Average</td><td>€2,483</td><td>€2,080</td><td>€403</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="block">
+            <h4>Suggested offer</h4>
+            <div class="price">
+              <div class="sell"><span>Sell</span><b>€2,500</b></div>
+              <div><span>Expect carrier</span><b>€2,080</b></div>
+              <div class="margin"><span>Margin</span><b>€420</b></div>
+            </div>
+            <p class="note">16.8% margin. Based on 4 similar full loads from Sofia area to the Ruhr in the last 6 months.</p>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-go="2">Draft offer at €2,500</button>
+            <button class="btn ghost" type="button">Change price</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="screen" id="s2" role="tabpanel" aria-labelledby="t2" hidden>
+    <div class="window">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span>Email client (Outlook or Gmail) · Drafts</div>
+      <div class="split">
+        <div class="pane">
+          <div class="field-row">До: <b>Иван Петров</b></div>
+          <div class="field-row">Относно: <b>RE: Запитване за транспорт София – Дуисбург</b></div>
+          <p class="meta">Drafted by your product. Nothing is sent until the forwarder clicks Send.</p>
+          <div class="draft">Здравейте, г-н Петров,
+
+Благодарим за запитването. Предлагаме следната цена за превоз София – Дуисбург:
+
+Цена: 2 500 EUR без ДДС
+Товарене: 12.11, София
+Доставка: до 15.11, Дуисбург
+Камион: тент 13,6 м, 33 палета / 22 т
+
+Офертата е валидна 48 часа.
+
+Поздрави,
+Мария Георгиева</div>
+        </div>
+        <aside class="side" aria-label="Your product sidebar">
+          <div class="side-head"><h3>Freight assistant</h3><span class="tag">Your product</span></div>
+          <div class="block">
+            <h4>Checks before sending</h4>
+            <dl>
+              <dt>Price vs. history</dt><dd>Within normal range</dd>
+              <dt>Minimum margin</dt><dd>€420 ≥ €250 rule</dd>
+              <dt>Dates</dt><dd>Match the request</dd>
+            </dl>
+          </div>
+          <div class="block">
+            <h4>Also prepared</h4>
+            <p class="note">A request to 3 carriers who ran Sofia → Ruhr recently, asking for their price at or below €2,100.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn" data-go="3">Customer accepted: prepare заявки</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3: zayavki -->
+  <section class="screen" id="s3" role="tabpanel" aria-labelledby="t3" hidden>
+    <div class="window">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span>Email client · Two заявки prepared by your product</div>
+      <div class="pane" style="display:flex;flex-direction:column;gap:16px">
+        <div class="guard"><b>Two prices, never mixed up</b>The client's заявка carries the selling price (€2,500). The carrier's заявка carries the carrier's net price (€2,080). The product checks each document before it goes out, so the carrier never sees your selling price and the client never sees your cost.</div>
+        <div class="docs">
+
+          <div class="doc-col client">
+            <span class="who client">To the client</span>
+            <h3>Ask the client for their official заявка</h3>
+            <div class="mini-mail"><span class="meta">Draft to Иван Петров · Стройматериали Юг ООД</span>Здравейте, г-н Петров,
+
+Благодарим за потвърждението. Моля, изпратете ни официална заявка за транспорт. За удобство прилагаме попълнена заявка с договорените условия. Необходими са само подпис и печат.
+
+Поздрави,
+Мария Георгиева</div>
+            <div class="paper">
+              <h4>Заявка за транспорт</h4>
+              <div class="no">Приложение · попълнено предварително</div>
+              <dl>
+                <dt>Възложител</dt><dd>Стройматериали Юг ООД</dd>
+                <dt>Изпълнител</dt><dd>Спедиция Пример ООД</dd>
+                <dt>Товарене</dt><dd>София, кв. Враждебна · 12.11.2026</dd>
+                <dt>Разтоварване</dt><dd>Duisburg, DE · до 15.11.2026</dd>
+                <dt>Стока</dt><dd>Строителни материали, 33 палета, 22 000 кг</dd>
+                <dt>Камион</dt><dd>Тент 13,6 м, FTL</dd>
+                <dt>Плащане</dt><dd>30 дни от датата на фактурата</dd>
+              </dl>
+              <div class="amount"><span>Навло, без ДДС</span><b>2 500 EUR</b></div>
+              <div class="sign"><span>Възложител: подпис и печат</span></div>
+            </div>
+            <div class="pending">When the signed заявка comes back, the product checks it against the agreed terms: price, dates, addresses, cargo. Any difference is flagged before the transport starts.</div>
+          </div>
+
+          <div class="doc-col carrier">
+            <span class="who carrier">To the carrier</span>
+            <h3>Send the заявка към превозвач</h3>
+            <div class="mini-mail"><span class="meta">Draft to Транс Карго 77 ЕООД · confirmed €2,080 by email at 11:02</span>Здравейте,
+
+Потвърждаваме курса София – Дуисбург. Прилагаме заявка към превозвач. Моля, върнете я подписана и потвърдете данните на камиона и шофьора.
+
+Поздрави,
+Мария Георгиева</div>
+            <div class="paper">
+              <h4>Заявка към превозвач</h4>
+              <div class="no">№ 2026-1184</div>
+              <dl>
+                <dt>Възложител</dt><dd>Спедиция Пример ООД</dd>
+                <dt>Превозвач</dt><dd>Транс Карго 77 ЕООД</dd>
+                <dt>Камион / ремарке</dt><dd>CB 4512 KM / CB 7731 EE</dd>
+                <dt>Товарене</dt><dd>София, кв. Враждебна · 12.11.2026</dd>
+                <dt>Разтоварване</dt><dd>Duisburg, DE · до 15.11.2026</dd>
+                <dt>Стока</dt><dd>Строителни материали, 33 палета, 22 000 кг</dd>
+                <dt>Условия</dt><dd>По Конвенция CMR. Плащане 45 дни след получаване на оригинални CMR и фактура.</dd>
+              </dl>
+              <div class="amount"><span>Навло, без ДДС</span><b>2 080 EUR</b></div>
+              <div class="sign"><span>Възложител</span><span>Превозвач</span></div>
+            </div>
+            <div class="pending">The net price comes from the carrier's own reply, not from the estimate. When the signed заявка comes back, the product files it and fills the carrier fields in the TMS.</div>
+          </div>
+
+        </div>
+        <div class="btn-row"><button class="btn" data-go="4">Both заявки signed: enter order in TMS</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="screen" id="s4" role="tabpanel" aria-labelledby="t4" hidden>
+    <div class="window">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span>Their existing TMS · New transport order</div>
+      <div class="pane" style="display:flex;flex-direction:column;gap:14px">
+        <div class="status">Filled in by your product from the emails and заявки. Check and save.</div>
+        <form class="form" onsubmit="event.preventDefault()">
+          <label for="f1">Client<input id="f1" class="filled" value="Стройматериали Юг ООД"></label>
+          <label for="f2">Loading place<input id="f2" class="filled" value="София, кв. Враждебна, BG"></label>
+          <label for="f3">Loading date<input id="f3" class="filled" value="12.11.2026"></label>
+          <label for="f4">Unloading place<input id="f4" class="filled" value="Duisburg, DE"></label>
+          <label for="f5">Delivery by<input id="f5" class="filled" value="15.11.2026"></label>
+          <label for="f6">Cargo<input id="f6" class="filled" value="Building materials, 33 pallets"></label>
+          <label for="f7">Weight<input id="f7" class="filled" value="22 000 kg"></label>
+          <label for="f8">Truck type<input id="f8" class="filled" value="Curtainsider 13.6 m, FTL"></label>
+          <label for="f9">Sell price<input id="f9" class="filled" value="2 500 EUR"></label>
+          <label for="f10">Carrier<input id="f10" class="filled" value="Транс Карго 77 ЕООД"></label>
+          <label for="f11">Carrier price<input id="f11" class="filled" value="2 080 EUR"></label>
+          <label for="f13">Truck / trailer<input id="f13" class="filled" value="CB 4512 KM / CB 7731 EE"></label>
+          <label for="f12">Order no.<input id="f12" value="" placeholder="Assigned by TMS"></label>
+        </form>
+        <p class="note">Highlighted fields came from the email thread and the two заявки. The sold price and the carrier price are saved together, so this order becomes part of the history the next quote is based on.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="explain" aria-label="How it connects">
+    <div><h3>Inbox: an add-in</h3><p>Installs into Outlook or Gmail like any add-in. It reads incoming requests and shows the sidebar next to the email. Replies go to Drafts.</p></div>
+    <div><h3>History: their own data</h3><p>Past sold prices and carrier prices are imported once from their TMS or Excel files, then kept up to date from every new order.</p></div>
+    <div><h3>TMS: an integration</h3><p>Uses the TMS's API or import file where one exists. Where none exists, the order can be exported to copy in, until an integration is built.</p></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('.step'));
+  function go(n){
+    for(var i=1;i<=4;i++){
+      document.getElementById('s'+i).hidden=(i!==n);
+      document.getElementById('t'+i).setAttribute('aria-selected',i===n?'true':'false');
+    }
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-go]'); if(!b) return;
+    go(+b.getAttribute('data-go'));
+    if(!b.classList.contains('step')) document.querySelector('.steps').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+})();
+</script>
+
+</body>
+</html>
