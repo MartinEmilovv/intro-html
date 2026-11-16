@@ -79,6 +79,35 @@ places they already work.
 - Pricing model and first pilot customer(s).
 - Data protection/GDPR requirements and where data may be hosted.
 
+## Market research: TMS in Bulgaria and Europe (Nov 2026)
+
+No public market-share data exists; this is a list of what shows up, mostly from
+vendor sites. Confirm with real forwarders.
+
+**Bulgaria: fragmented, mostly local products**
+- Нюдейта (newdata.bg, FOBOS/NORD): says it leads Bulgarian forwarding and customs
+  software, 1000+ clients (customs-heavy).
+- Сиклам "Спедитор 4" (cyclamsoft.com): software for forwarding offices, incl. documents.
+- ssTransport (sst.bg): web-based, for small and mid-size forwarders and carriers.
+  **Already advertises AI that fills in data from a заявка**: competitor or partner.
+- Isystems (on Microsoft Dynamics), Cargo Manage (cloud), HOGS aiTMS (claims TIMOCOM
+  integration), Bisoft; some firms build their own (e.g. Raztrans) or use Excel.
+- None publishes an API. Ask each vendor directly.
+- Speditor.net: freight exchange run by Speditor NET OOD, Sofia (web, iOS, Mac).
+
+**Europe**
+- Forwarder/carrier TMS: Soloplan CarLo (DE, ~1,700–1,800 customers, has a Trans.eu
+  interface), WinSped (LIS), Qargo (newer, cloud).
+- Shipper-side platforms: Transporeon (Trimble), Alpega (incl. Teleroute), E2open/BluJay,
+  Descartes. For forwarders these are a source of incoming loads, not their own TMS.
+- Freight exchanges: TIMOCOM (has a partner interface program), Trans.eu (API,
+  ~16,000 forwarding companies), Teleroute.
+
+**What it means for us:** no single TMS to integrate with, so stay email-first (works
+whatever TMS they use), build the Drive transport folder, and pick TMS integrations
+by what pilot customers use. Talk to ssTransport early: they're either the closest
+competitor or a partner with distribution.
+
 ## Mockup
 
 [`mockups/freight-assistant.html`](../mockups/freight-assistant.html): a clickable
