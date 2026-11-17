@@ -25,5 +25,27 @@ var CONFIG = {
     }
   },
   // Also acknowledge emails you send to yourself. Only for testing.
-  ACK_INCLUDE_OWN_EMAILS: false
+  ACK_INCLUDE_OWN_EMAILS: false,
+
+  // Заявки (see Orders.gs). Your company as it appears on the documents.
+  COMPANY_NAME: '',
+  CLIENT_PAYMENT_TERMS: '30 дни от датата на фактурата',
+  CARRIER_PAYMENT_TERMS: '45 дни след получаване на оригинални CMR и фактура',
+  // Texts of the emails that carry the заявки. {order} = order number.
+  ORDER_EMAILS: {
+    bg: {
+      client: 'Благодарим Ви за потвърждението. Моля, изпратете ни официална заявка за транспорт. ' +
+        'За удобство прилагаме попълнена заявка с договорените условия: необходими са само подпис и печат.',
+      carrier: 'Потвърждаваме транспорта. Прилагаме заявка № {order}. ' +
+        'Моля, върнете я подписана и потвърдете данните на камиона и шофьора.',
+      carrierSubject: 'Заявка № {order}: {route}'
+    },
+    en: {
+      client: 'Thank you for confirming. Please send us your official transport order. ' +
+        'For your convenience, a filled-in order with the agreed terms is attached: it only needs your signature and stamp.',
+      carrier: 'We confirm the transport. Please find attached transport order no. {order}. ' +
+        'Please return it signed and confirm the truck and driver details.',
+      carrierSubject: 'Transport order no. {order}: {route}'
+    }
+  }
 };

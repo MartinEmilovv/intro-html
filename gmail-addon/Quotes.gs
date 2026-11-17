@@ -1,0 +1,56 @@
+/**
+ * Carrier quotes: prices carriers gave for a request, by email, Viber or phone.
+ * Saved on a "Quotes" tab of the price history sheet (created on first use),
+ * listed in the sidebar, and used to pre-fill the order form.
+ *
+ * Quotes tab: date | request | route | carrier | price_eur | source
+ * `request` is the Gmail message ID of the transport request.
+ */
+
+var QUOTES_TAB = 'Quotes';
+var QUOTES_HEADER = ['date', 'request', 'route', 'carrier', 'price_eur', 'source'];
+var QUOTE_SOURCES = ['Email', 'Viber', 'Phone'];
+
+function getQuotesSheet_(sheetId) {
+  var ss = SpreadsheetApp.openById(sheetId);
+  var sheet = ss.getSheetByName(QUOTES_TAB);
+  if (!sheet) {
+    sheet = ss.insertSheet(QUOTES_TAB);
+    sheet.appendRow(QUOTES_HEADER);
+  }
+  return sheet;
+}
+
+/** Quotes saved for one request, cheapest first. */
+function readQuotes_(sheetId, requestId) {
+  var sheet = SpreadsheetApp.openById(sheetId).getSheetByName(QUOTES_TAB);
+  if (!sheet) return [];
+  return quotesForRequest_(rowsToObjects_(sheet.getDataRange().getValues()), requestId);
+}
+
+function quotesForRequest_(rows, requestId) {
+  return rows
+    .filter(function (q) { return String(q.request) === String(requestId) && Number(q.price_eur) > 0; })
+    .sort(function (a, b) { return Number(a.price_eur) - Number(b.price_eur); });
+}
+
+function saveQuote_(sheetId, requestId, request, carrier, priceEur, source) {
+  getQuotesSheet_(sheetId).appendRow([
+    new Date(), String(requestId), routeLabel_(request), carrier, priceEur, source
+  ]);
+}
+
+/** "Sofia → Duisburg" */
+function routeLabel_(r) {
+  return (r.from_city || r.from_country || '?') + ' → ' + (r.to_city || r.to_country || '?');
+}
+
+/** Parses "2 080", "2080,50" or "2.080" into a number of euros; null if it isn't one. */
+function parsePrice_(text) {
+  var t = String(text || '').replace(/[\s€]|EUR/gi, '');
+  if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  t = t.replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  var n = Number(t);
+  return n > 0 ? n : null;
+}

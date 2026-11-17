@@ -125,6 +125,10 @@ Built so far in the Gmail add-on:
 - Offer: read request, similar transports, suggested price, offer reply draft.
 - Automatic acknowledgment of new transport requests (fixed template, by name).
 - Carriers for the route (Carriers tab) and price request drafts to them.
+- Carrier quotes (Quotes tab), from email, Viber or phone.
+- Order confirmed: both заявки as PDFs from editable starter templates, email drafts
+  to client and carrier, running order numbers, transport folder in Drive, and the
+  transport added to the History tab.
 
 ## To-do
 
@@ -134,23 +138,17 @@ Built so far in the Gmail add-on:
   (a real contact's number) into the browser and report: (a) chat opens with the text
   typed in, (b) chat opens empty, (c) nothing opens. Don't press Send.
 - [ ] Share real заявки examples (client's заявка за транспорт and заявка към превозвач),
-  anonymized, in Google Drive, and say whether the order number comes from the TMS
-  or is a running number.
-- [ ] Test the acknowledgment and carriers features in Gmail.
+  anonymized, in Google Drive, to replace the starter templates; and say whether the
+  order number should come from the TMS (the MVP uses a running number).
+- [ ] Fill in COMPANY_NAME and payment terms in Config.gs.
+- [ ] Test the acknowledgment, carriers, quotes and заявки features in Gmail.
 - [ ] Find out which TMS the target forwarders use, and for each: does it have an API
   or a file import (Excel/CSV/XML), and does it run in a browser or as a desktop program?
 
 **Next to build**
-- [ ] Заявки: "Order confirmed" step in the sidebar. Drafts to the client (request for
-  their official заявка, pre-filled PDF at the selling price) and to the carrier
-  (заявка към превозвач PDF at the carrier price), from Google Docs templates with
-  `{{placeholders}}`. Always by email. Add the confirmed transport to the History tab.
 - [ ] "Send via Viber" button per carrier (Viber Desktop link with the request
   pre-filled, or open chat + copy text), depending on the Viber test.
-- [ ] Field in the sidebar to record a carrier's quoted price (from Viber or phone).
-- [ ] Transport file: when an order is confirmed, create a Google Drive folder per
-  transport (order number + route) with both заявки, the client and carrier email
-  threads as PDFs, and a summary of the order data. First step towards TMS entry.
+- [ ] Save the carrier's email thread to the transport folder too.
 
 **Before selling to clients**
 - [ ] Move the Anthropic API key to a small server of ours: the add-on calls our server,

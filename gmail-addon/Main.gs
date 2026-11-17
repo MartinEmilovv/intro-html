@@ -2,8 +2,9 @@
  * Gmail sidebar: the cards the forwarder sees, and what each button does.
  *
  * Flow: open an email -> "Analyze request" -> details, similar past transports
- * and a suggested price -> adjust the price -> "Create reply draft", which opens
- * the offer as a Gmail reply draft. Nothing is ever sent automatically.
+ * and a suggested price -> "Create reply draft" (the offer) -> carriers for the
+ * route and price request drafts -> record carrier quotes -> "Prepare заявки"
+ * when the order is confirmed. Nothing is ever sent automatically.
  */
 
 var CACHE_SECONDS = 6 * 60 * 60;
@@ -14,7 +15,10 @@ function getSettings_() {
   return {
     historySheetId: get('HISTORY_SHEET_ID'),
     signature: get('SIGNATURE'),
-    offerTerms: get('OFFER_TERMS')
+    offerTerms: get('OFFER_TERMS'),
+    companyName: get('COMPANY_NAME'),
+    clientPaymentTerms: get('CLIENT_PAYMENT_TERMS'),
+    carrierPaymentTerms: get('CARRIER_PAYMENT_TERMS')
   };
 }
 
@@ -88,29 +92,41 @@ function onAnalyze(e) {
   if (!request.is_transport_request) {
     return notify_('This email does not look like a transport request.');
   }
-
-  var similar = [];
-  var carriers = [];
-  if (settings.historySheetId) {
-    try {
-      var history = readHistory_(settings.historySheetId);
-      similar = findSimilar_(request, history);
-      carriers = rankCarriers_(request, history, readCarriers_(settings.historySheetId));
-    } catch (err) {
-      return notify_('Could not read the price history sheet: ' + err.message);
-    }
-  }
-  var suggestion = suggestPrice_(similar);
-
   CacheService.getUserCache().put('req:' + e.gmail.messageId, JSON.stringify(request), CACHE_SECONDS);
 
-  var card = buildAnalysisCard_(request, similar, suggestion, carriers, settings);
+  var card;
+  try {
+    card = renderAnalysis_(e.gmail.messageId, request, settings);
+  } catch (err) {
+    return notify_('Could not read the price history sheet: ' + err.message);
+  }
   return CardService.newActionResponseBuilder()
     .setNavigation(CardService.newNavigation().pushCard(card))
     .build();
 }
 
-function buildAnalysisCard_(r, similar, suggestion, carriers, settings) {
+function cachedRequest_(e) {
+  var cached = CacheService.getUserCache().get('req:' + e.gmail.messageId);
+  if (!cached) throw new Error('The analysis expired. Click Analyze request again.');
+  return JSON.parse(cached);
+}
+
+/** Reads the sheet (no Claude call) and builds the analysis card. */
+function renderAnalysis_(requestId, request, settings) {
+  var history = [], carriersTab = [], quotes = [];
+  if (settings.historySheetId) {
+    history = readHistory_(settings.historySheetId);
+    carriersTab = readCarriers_(settings.historySheetId);
+    quotes = readQuotes_(settings.historySheetId, requestId);
+  }
+  var similar = findSimilar_(request, history);
+  var suggestion = suggestPrice_(similar);
+  if (suggestion) CacheService.getUserCache().put('sugg:' + requestId, String(suggestion.sell), CACHE_SECONDS);
+  var ranked = rankCarriers_(request, history, carriersTab);
+  return buildAnalysisCard_(request, similar, suggestion, ranked, carriersTab, quotes, settings);
+}
+
+function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quotes, settings) {
   var route = [r.from_city, r.from_country].filter(String).join(', ') + ' → ' +
     [r.to_city, r.to_country].filter(String).join(', ');
   var load = [r.cargo, r.pallets != null ? r.pallets + ' pallets' : '',
@@ -160,12 +176,223 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, settings) {
         CardService.newAction().setFunctionName('onCreateDraft'),
         CardService.ComposedEmailType.REPLY_AS_DRAFT));
 
-  return CardService.newCardBuilder()
+  var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader().setTitle('Transport request'))
     .addSection(details)
     .addSection(history)
     .addSection(offer)
-    .addSection(buildCarriersSection_(carriers, settings))
+    .addSection(buildCarriersSection_(carriers, settings));
+  if (settings.historySheetId) card.addSection(buildQuotesSection_(quotes, carriers, carriersTab));
+  return card.addSection(buildOrderSection_()).build();
+}
+
+/** Carriers on the route first, then the rest of the Carriers tab. */
+function carrierChoices_(ranked, carriersTab) {
+  var seen = {};
+  var names = [];
+  ranked.map(function (c) { return c.name; })
+    .concat(carriersTab.map(function (c) { return String(c.carrier || '').trim(); }))
+    .forEach(function (name) {
+      var key = norm_(name);
+      if (key && !seen[key]) { seen[key] = true; names.push(name); }
+    });
+  return names;
+}
+
+function buildQuotesSection_(quotes, ranked, carriersTab) {
+  var section = CardService.newCardSection().setHeader('Carrier quotes');
+  if (quotes.length === 0) {
+    section.addWidget(CardService.newTextParagraph().setText(
+      'No quotes yet. Record prices carriers give you by email, Viber or phone.'));
+  }
+  quotes.forEach(function (q, i) {
+    section.addWidget(CardService.newDecoratedText()
+      .setText((i === 0 ? '<b>' : '') + q.carrier + ': ' + eur_(q.price_eur) + (i === 0 ? '</b> (cheapest)' : ''))
+      .setBottomLabel(q.source + (q.date instanceof Date ? ' · ' + Utilities.formatDate(q.date,
+        Session.getScriptTimeZone(), 'dd.MM HH:mm') : ''))
+      .setWrapText(true));
+  });
+
+  var names = carrierChoices_(ranked, carriersTab);
+  if (names.length === 0) return section;
+  var carrierPick = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.DROPDOWN)
+    .setFieldName('quote_carrier')
+    .setTitle('Carrier');
+  names.forEach(function (name, i) { carrierPick.addItem(name, name, i === 0); });
+  var sourcePick = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.DROPDOWN)
+    .setFieldName('quote_source')
+    .setTitle('Received by');
+  QUOTE_SOURCES.forEach(function (src, i) { sourcePick.addItem(src, src, i === 0); });
+
+  return section
+    .addWidget(carrierPick)
+    .addWidget(CardService.newTextInput().setFieldName('quote_price').setTitle('Their price, EUR excl. VAT'))
+    .addWidget(sourcePick)
+    .addWidget(CardService.newTextButton()
+      .setText('Save quote')
+      .setOnClickAction(CardService.newAction().setFunctionName('onSaveQuote')));
+}
+
+function onSaveQuote(e) {
+  var inputs = e.commonEventObject.formInputs || {};
+  var carrier = inputs.quote_carrier ? inputs.quote_carrier.stringInputs.value[0] : '';
+  var price = parsePrice_(inputs.quote_price ? inputs.quote_price.stringInputs.value[0] : '');
+  var source = inputs.quote_source ? inputs.quote_source.stringInputs.value[0] : QUOTE_SOURCES[0];
+  if (!carrier) return notify_('Choose a carrier.');
+  if (price == null) return notify_('Enter the price as a number, e.g. 2080.');
+
+  var settings = getSettings_();
+  var request;
+  try {
+    request = cachedRequest_(e);
+    saveQuote_(settings.historySheetId, e.gmail.messageId, request, carrier, price, source);
+  } catch (err) {
+    return notify_(err.message);
+  }
+  return CardService.newActionResponseBuilder()
+    .setNavigation(CardService.newNavigation().updateCard(renderAnalysis_(e.gmail.messageId, request, settings)))
+    .setNotification(CardService.newNotification().setText('Saved ' + carrier + ': ' + eur_(price) + '.'))
+    .build();
+}
+
+function buildOrderSection_() {
+  return CardService.newCardSection().setHeader('Order confirmed')
+    .addWidget(CardService.newTextParagraph().setText(
+      'When the client accepts and a carrier is confirmed: prepare both заявки, the emails, ' +
+      'the transport folder, and add the transport to your history.'))
+    .addWidget(CardService.newTextButton()
+      .setText('Prepare заявки')
+      .setOnClickAction(CardService.newAction().setFunctionName('onOrderConfirmed')));
+}
+
+/** "Иван Петров <ivan@x.bg>" -> {name, email} */
+function parseSender_(from) {
+  var m = String(from).match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>/);
+  if (m) return { name: m[1].trim(), email: m[2].trim() };
+  return { name: '', email: String(from).trim() };
+}
+
+function onOrderConfirmed(e) {
+  var settings = getSettings_();
+  if (!settings.historySheetId) return notify_('Connect a price history sheet first.');
+  var request, message, carriersTab, quotes, ranked;
+  try {
+    request = cachedRequest_(e);
+    message = getMessage_(e);
+    carriersTab = readCarriers_(settings.historySheetId);
+    quotes = readQuotes_(settings.historySheetId, e.gmail.messageId);
+    ranked = rankCarriers_(request, readHistory_(settings.historySheetId), carriersTab);
+  } catch (err) {
+    return notify_(err.message);
+  }
+  var cache = CacheService.getUserCache();
+  var sell = cache.get('offer:' + e.gmail.messageId) || cache.get('sugg:' + e.gmail.messageId) || '';
+  var sender = parseSender_(message.getFrom());
+  var cheapest = quotes[0];
+
+  var carrierPick = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.DROPDOWN)
+    .setFieldName('order_carrier')
+    .setTitle('Carrier');
+  var names = carrierChoices_(ranked, carriersTab);
+  var preselect = cheapest ? norm_(cheapest.carrier) : (names[0] ? norm_(names[0]) : '');
+  names.forEach(function (name) { carrierPick.addItem(name, name, norm_(name) === preselect); });
+
+  var section = CardService.newCardSection()
+    .addWidget(CardService.newTextParagraph().setText(
+      'Check the details, then create the заявки. Two drafts are created; nothing is sent.'))
+    .addWidget(CardService.newTextInput().setFieldName('order_client')
+      .setTitle('Client company (on the client заявка)').setValue(sender.name))
+    .addWidget(CardService.newTextInput().setFieldName('order_sell')
+      .setTitle('Agreed selling price, EUR excl. VAT').setValue(String(sell)))
+    .addWidget(carrierPick)
+    .addWidget(CardService.newTextInput().setFieldName('order_carrier_price')
+      .setTitle('Carrier price, EUR excl. VAT').setValue(cheapest ? String(cheapest.price_eur) : ''))
+    .addWidget(CardService.newTextInput().setFieldName('order_plates')
+      .setTitle('Truck / trailer plates (optional)'))
+    .addWidget(CardService.newTextButton()
+      .setText('Create заявки')
+      .setOnClickAction(CardService.newAction().setFunctionName('onCreateOrders')));
+  if (names.length === 0) {
+    section = CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(
+      'Add your carriers to the Carriers tab of the price history sheet first.'));
+  }
+
+  var card = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle('Order confirmed').setSubtitle(routeLabel_(request)))
+    .addSection(section)
+    .build();
+  return CardService.newActionResponseBuilder()
+    .setNavigation(CardService.newNavigation().pushCard(card))
+    .build();
+}
+
+function onCreateOrders(e) {
+  var inputs = e.commonEventObject.formInputs || {};
+  var get = function (name) { return inputs[name] ? inputs[name].stringInputs.value[0].trim() : ''; };
+  var sell = parsePrice_(get('order_sell'));
+  var carrierPrice = parsePrice_(get('order_carrier_price'));
+  if (!get('order_client')) return notify_('Enter the client company.');
+  if (sell == null) return notify_('Enter the agreed selling price as a number.');
+  if (carrierPrice == null) return notify_('Enter the carrier price as a number.');
+
+  var settings = getSettings_();
+  var folder;
+  try {
+    var request = cachedRequest_(e);
+    var message = getMessage_(e);
+    var carrier = readCarriers_(settings.historySheetId).filter(function (c) {
+      return norm_(c.carrier) === norm_(get('order_carrier'));
+    })[0];
+    if (!carrier) return notify_('Choose a carrier from the list.');
+    if (!String(carrier.email || '').trim()) {
+      return notify_(carrier.carrier + ' has no email on the Carriers tab. Add it and try again.');
+    }
+    var sender = parseSender_(message.getFrom());
+    var order = {
+      number: nextOrderNumber_(),
+      date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd.MM.yyyy'),
+      language: request.language,
+      client_name: get('order_client'),
+      client_contact: request.contact_name || sender.name,
+      client_email: sender.email,
+      sell_eur: sell,
+      carrier_name: String(carrier.carrier).trim(),
+      carrier_contact: String(carrier.contact_person || '').trim(),
+      carrier_email: String(carrier.email).trim(),
+      carrier_language: norm_(carrier.language) || 'bg',
+      carrier_eur: carrierPrice,
+      plates: get('order_plates'),
+      from_city: request.from_city, from_country: request.from_country, from_address: request.from_address,
+      to_city: request.to_city, to_country: request.to_country, to_address: request.to_address,
+      loading_date: request.loading_date, delivery_date: request.delivery_date,
+      cargo: request.cargo, pallets: request.pallets, weight_kg: request.weight_kg,
+      truck_type: request.truck_type
+    };
+    folder = createOrderDocuments_(order, message, settings);
+  } catch (err) {
+    return notify_('Could not create the заявки: ' + err.message);
+  }
+
+  var done = CardService.newCardSection()
+    .addWidget(CardService.newTextParagraph().setText(
+      '<b>Order ' + order.number + '</b> is ready:<br>' +
+      '• Reply to the client with their заявка (' + eur_(sell) + ') in Drafts<br>' +
+      '• Email to ' + order.carrier_name + ' with their заявка (' + eur_(carrierPrice) + ') in Drafts<br>' +
+      '• Transport folder in Drive<br>' +
+      '• Added to your price history<br><br>' +
+      'Check the drafts and PDFs before sending.'))
+    .addWidget(CardService.newTextButton()
+      .setText('Open transport folder')
+      .setOpenLink(CardService.newOpenLink().setUrl(folder.getUrl())));
+  var card = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle('Заявки created'))
+    .addSection(done)
+    .build();
+  return CardService.newActionResponseBuilder()
+    .setNavigation(CardService.newNavigation().pushCard(card))
     .build();
 }
 
@@ -249,6 +476,7 @@ function onCreateDraft(e) {
   var cached = CacheService.getUserCache().get('req:' + e.gmail.messageId);
   if (!cached) throw new Error('The analysis expired. Click Analyze request again.');
 
+  CacheService.getUserCache().put('offer:' + e.gmail.messageId, price.replace(',', '.'), CACHE_SECONDS);
   var body = draftOffer_(JSON.parse(cached), price, message.getPlainBody(), getSettings_());
   var draft = message.createDraftReply(body);
   return CardService.newComposeActionResponseBuilder().setGmailDraft(draft).build();

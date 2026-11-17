@@ -18,6 +18,10 @@ the draft opens in Gmail for you to check and send.
    the offer in the customer's language and it opens as a reply draft.
 5. Under **Carriers for this route**, tick the carriers to ask and click **Draft
    price requests**: one draft per carrier lands in your Drafts folder.
+6. Under **Carrier quotes**, record the prices carriers give you (by email, Viber or
+   phone).
+7. When the order is confirmed, click **Prepare заявки**: both заявки as PDFs, the
+   two email drafts, a transport folder in Drive, and a new row in your history.
 
 ## Files
 
@@ -30,6 +34,8 @@ the draft opens in Gmail for you to check and send.
 | `Config.gs` | Default settings (sheet ID, signature, offer terms, acknowledgment texts); Script Properties override them |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
+| `Quotes.gs` | Records carrier quotes on a Quotes tab |
+| `Orders.gs` | Order confirmed: заявки PDFs from templates, email drafts, transport folder, history row |
 | `sample-history.csv` | Example price history (made-up numbers) for the History tab |
 | `sample-carriers.csv` | Example carriers (made-up companies, `.example` emails) for the Carriers tab |
 | `test/` | Tests for matching, pricing, acknowledgments and carriers: `node --test test/*.test.js` |
@@ -172,6 +178,47 @@ cargo, pallets, weight and truck type. Your selling price, your client's name an
 the exact addresses are never passed to Claude for this, so they can't end up in a
 carrier email.
 
+## Carrier quotes
+
+Under **Carrier quotes**, choose the carrier, type their price and where it came
+from (Email, Viber, Phone), and click **Save quote**. Quotes go to a **Quotes** tab
+(created on first use) and are listed for the request, cheapest first. The cheapest
+one pre-fills the order form.
+
+## Заявки (order confirmed)
+
+Click **Prepare заявки** when the client has accepted and a carrier is confirmed.
+The form is pre-filled: client company (from the sender), agreed price (your
+offer, or the suggestion), carrier and carrier price (the cheapest quote). Add the
+truck plates if you have them, then **Create заявки**:
+
+1. The order gets a running number: `2026-0001`, `2026-0002`, ... (restarts each year;
+   stored in Script Properties as `NEXT_ORDER_NUMBER`).
+2. Both заявки are filled from Google Docs templates and saved as PDFs: the client's
+   with the **selling price**, the carrier's with the **carrier price**.
+3. Two drafts: a reply to the client asking for their official заявка (their PDF
+   attached), and an email to the carrier (their PDF attached). Nothing is sent.
+4. A folder `Freight Assistant/Transports/2026-0001 Sofia–Duisburg` in Drive with both
+   заявки (Doc and PDF), the client email thread as a PDF, and an order summary.
+5. The transport is added to the History tab, so future suggestions learn from it.
+
+**Templates.** Run `setUpTemplates` once from the editor: it creates two starter
+templates in Drive (`Freight Assistant` folder) and logs their links. Edit them freely
+(logo, company details, terms) or point `CLIENT_TEMPLATE_ID` / `CARRIER_TEMPLATE_ID`
+in Script Properties at your own Google Docs. Placeholders: `{{order_number}}`
+`{{date}}` `{{company}}` `{{client}}` `{{carrier}}` `{{carrier_contact}}`
+`{{truck_plates}}` `{{loading_place}}` `{{loading_date}}` `{{unloading_place}}`
+`{{delivery_date}}` `{{cargo}}` `{{pallets}}` `{{weight}}` `{{truck_type}}` `{{price}}`
+`{{payment_terms}}`.
+
+**Prices never cross.** The client's document only ever gets the client, the selling
+price and the client payment terms; the carrier's only the carrier, the carrier price
+and the carrier payment terms (tested in `test/orders.test.js`). A placeholder with no
+value for that side is left blank.
+
+**Settings** in `Config.gs`: `COMPANY_NAME`, `CLIENT_PAYMENT_TERMS`,
+`CARRIER_PAYMENT_TERMS`, and the email texts in `ORDER_EMAILS`.
+
 ## Known limits of this MVP
 
 - **Matching is by country pair, city name and truck type, not distance.** City
@@ -179,7 +226,9 @@ carrier email.
 - **Each button has about 30 seconds** before Gmail gives up. If you see a timeout,
   click again.
 - **History is a one-time sheet.** Orders aren't added to it automatically yet.
-- **Not included yet:** заявки, freight exchanges, TMS integration, Outlook.
+- **Not included yet:** Viber sending, freight exchanges, TMS integration, Outlook.
+- **The carrier's email thread** isn't saved to the transport folder yet (only the
+  client's), because carrier conversations may happen on Viber or in another thread.
 - **The prompts have not been tested against real emails yet.** Your first
   real tests will show what to adjust in `Claude.gs`.
 
