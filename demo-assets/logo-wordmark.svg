@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="760" height="320">
+  <!-- Primer Logistics: fictional demo brand, horizontal version. -->
+  <g transform="translate(16 16) scale(0.5625)">
+    <rect width="512" height="512" rx="112" fill="#12355b"/>
+    <path d="M150 352 C150 262 232 262 262 222 C286 190 300 172 352 160"
+          fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
+    <path d="M286 142 L366 152 L346 230"
+          fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="150" cy="364" r="38" fill="#f5a524"/>
+  </g>
+  <text x="346" y="178" font-family="Inter" font-weight="800" font-size="132" fill="#12355b" letter-spacing="-3">Primer</text>
+  <text x="352" y="250" font-family="Inter" font-weight="600" font-size="46" fill="#5b7088" letter-spacing="14">LOGISTICS</text>
+</svg>

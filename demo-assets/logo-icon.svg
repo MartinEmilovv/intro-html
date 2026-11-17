@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Primer Logistics: fictional demo brand. Route from an origin point to an arrow. -->
+  <rect width="512" height="512" rx="112" fill="#12355b"/>
+  <path d="M150 352 C150 262 232 262 262 222 C286 190 300 172 352 160"
+        fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
+  <path d="M286 142 L366 152 L346 230"
+        fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="150" cy="364" r="38" fill="#f5a524"/>
+</svg>
