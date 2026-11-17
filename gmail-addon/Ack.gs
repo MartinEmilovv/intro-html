@@ -54,6 +54,13 @@ function autoAcknowledge() {
         if (request.is_transport_request) {
           message.reply(buildAckBody_(request.language, request.contact_name, settings.signature));
           thread.addLabel(sentLabel);
+          // Saved, so opening the email shows the analysis without another Claude call.
+          // A failed save must not stop the thread being marked checked (no double reply).
+          try {
+            saveAnalysis_(settings, message.getId(), request);
+          } catch (saveErr) {
+            console.error('Could not save the analysis: ' + saveErr.message);
+          }
         }
       } catch (err) {
         // Not marked as checked, so the next run tries again (within the 1-hour window).

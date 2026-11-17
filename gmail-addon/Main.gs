@@ -68,16 +68,26 @@ function onHomepage() {
     .addWidget(CardService.newTextParagraph().setText(
       'Open a transport request email and click <b>Analyze request</b>.'));
   if (!hasKey) section.addWidget(field_('Claude API key', 'Missing: add ANTHROPIC_API_KEY in Script Properties'));
-  return CardService.newCardBuilder()
+  var card = CardService.newCardBuilder()
     .setHeader(brandHeader_(s, s.companyName))
     .addSection(section)
-    .addSection(s.historySheetId ? buildWorkspaceSection_(s) : buildSetupSection_(s))
-    .build();
+    .addSection(s.historySheetId ? buildWorkspaceSection_(s) : buildSetupSection_(s));
+  if (s.historySheetId) card.addSection(buildSignatureSection_(s));
+  return card.build();
 }
 
-/** Shown when an email is opened. Claude is only called when the button is clicked. */
+/**
+ * Shown when an email is opened. If it was analyzed before, shows that analysis
+ * straight away (no Claude call). Otherwise Claude is only called on the button.
+ */
 function onGmailMessage(e) {
   var settings = getSettings_();
+  try {
+    var saved = loadAnalysis_(settings, e.gmail.messageId);
+    if (saved) return renderAnalysis_(e.gmail.messageId, saved, settings);
+  } catch (err) {
+    // Fall back to the normal card below.
+  }
   var button = primaryButton_('Analyze request', settings)
     .setOnClickAction(CardService.newAction().setFunctionName('onAnalyze'));
   var section = CardService.newCardSection()
@@ -105,7 +115,11 @@ function onAnalyze(e) {
   if (!request.is_transport_request) {
     return notify_('This email does not look like a transport request.');
   }
-  CacheService.getUserCache().put('req:' + e.gmail.messageId, JSON.stringify(request), CACHE_SECONDS);
+  try {
+    saveAnalysis_(settings, e.gmail.messageId, request);
+  } catch (err) {
+    // Still show the analysis; it just won't be remembered after 6 hours.
+  }
 
   var card;
   try {
@@ -118,10 +132,11 @@ function onAnalyze(e) {
     .build();
 }
 
+/** The saved analysis of the open email (see Requests.gs). */
 function cachedRequest_(e) {
-  var cached = CacheService.getUserCache().get('req:' + e.gmail.messageId);
-  if (!cached) throw new Error('The analysis expired. Click Analyze request again.');
-  return JSON.parse(cached);
+  var request = loadAnalysis_(getSettings_(), e.gmail.messageId);
+  if (!request) throw new Error('Click Analyze request first.');
+  return request;
 }
 
 /** Reads the sheet (no Claude call) and builds the analysis card. */
@@ -154,6 +169,9 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
   if (r.missing_info.length) {
     details.addWidget(iconField_('STAR', 'Missing', r.missing_info.join('; ')));
   }
+  details.addWidget(CardService.newTextButton()
+    .setText('Analyze again')
+    .setOnClickAction(CardService.newAction().setFunctionName('onAnalyze')));
 
   var history = CardService.newCardSection().setHeader('Similar transports you have done')
     .setCollapsible(true).setNumUncollapsibleWidgets(2);
@@ -299,7 +317,7 @@ function onOrderConfirmed(e) {
     return notify_(err.message);
   }
   var cache = CacheService.getUserCache();
-  var sell = cache.get('offer:' + e.gmail.messageId) || cache.get('sugg:' + e.gmail.messageId) || '';
+  var sell = request.offer_price || cache.get('sugg:' + e.gmail.messageId) || '';
   var sender = parseSender_(message.getFrom());
   var cheapest = quotes[0];
 
@@ -449,9 +467,12 @@ function onDraftCarrierRequests(e) {
   var picked = inputs.carriers ? inputs.carriers.stringInputs.value : [];
   if (picked.length === 0) return notify_('Tick at least one carrier.');
 
-  var cached = CacheService.getUserCache().get('req:' + e.gmail.messageId);
-  if (!cached) return notify_('The analysis expired. Click Analyze request again.');
-  var request = JSON.parse(cached);
+  var request;
+  try {
+    request = cachedRequest_(e);
+  } catch (err) {
+    return notify_(err.message);
+  }
 
   var settings = getSettings_();
   var history = readHistory_(settings.historySheetId);
@@ -482,11 +503,17 @@ function onCreateDraft(e) {
   }
 
   var message = getMessage_(e);
-  var cached = CacheService.getUserCache().get('req:' + e.gmail.messageId);
-  if (!cached) throw new Error('The analysis expired. Click Analyze request again.');
+  var settings = getSettings_();
+  var request = cachedRequest_(e);
 
-  CacheService.getUserCache().put('offer:' + e.gmail.messageId, price.replace(',', '.'), CACHE_SECONDS);
-  var body = draftOffer_(JSON.parse(cached), price, message.getPlainBody(), getSettings_());
+  // Remember the offered price with the analysis, for the order form later.
+  request.offer_price = price.replace(',', '.');
+  try {
+    saveAnalysis_(settings, e.gmail.messageId, request);
+  } catch (err) {
+    // The draft matters more; the order form just won't be pre-filled with this price.
+  }
+  var body = draftOffer_(request, price, message.getPlainBody(), settings);
   var draft = message.createDraftReply(body);
   return CardService.newComposeActionResponseBuilder().setGmailDraft(draft).build();
 }

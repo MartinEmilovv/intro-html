@@ -34,6 +34,7 @@ the draft opens in Gmail for you to check and send.
 | `Config.gs` | Defaults and fixed texts shared by every company (acknowledgment and order email texts, starting terms) |
 | `Setup.gs` | Company workspace: each company's own sheet, settings, templates and order counter |
 | `Brand.gs` | Each company's assistant name, logo and button color in the sidebar |
+| `Requests.gs` | Saves each analysis (Requests tab), so reopening an email shows it again |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
 | `Quotes.gs` | Records carrier quotes on a Quotes tab |
@@ -79,8 +80,10 @@ In the sidebar, under **Set up your company**:
 - **Use this sheet** (an existing company): paste the link of a company sheet, e.g. one
   a colleague shared, or a price history sheet you made before. Missing tabs are added.
 
-Then open the sheet's **Settings** tab and fill in the company name and terms, and save
-your email signature in the sidebar. To start with sample data, import
+Then, in the sidebar with no email open, expand **Company settings**: company name,
+terms, assistant name, logo and button color, then **Save company settings**. They're
+stored on the sheet's **Settings** tab (you can also edit them there). Save your own
+signature under **Your signature**. To start with sample data, import
 `sample-history.csv` into the History tab and `sample-carriers.csv` into Carriers.
 
 **History tab** columns (header row, any order):
@@ -115,7 +118,8 @@ filled in automatically, the template IDs and the order counter (`NEXT_ORDER_NUM
 
 ### Branding
 
-Each company can make the sidebar its own, on its Settings tab:
+Each company can make the sidebar its own, under **Company settings** in the sidebar
+(stored on the Settings tab):
 
 - `ASSISTANT_NAME`: the title at the top of every card, e.g. "Orbit Assistant"
   (empty = Freight Assistant).
@@ -208,6 +212,15 @@ The request is written only from the load: route (cities and countries), dates,
 cargo, pallets, weight and truck type. Your selling price, your client's name and
 the exact addresses are never passed to Claude for this, so they can't end up in a
 carrier email.
+
+## Reopening an analyzed email
+
+Every analysis is saved for that email: in the cache for 6 hours, and on the company
+sheet's **Requests** tab permanently. Reopening the email shows the analysis straight
+away (no Claude call, no cost), with up-to-date history, carriers and quotes. **Analyze
+again** re-reads the email. Requests the automatic acknowledgment already read open
+pre-analyzed too. The offered price is saved with the analysis and pre-fills the order
+form.
 
 ## Carrier quotes
 

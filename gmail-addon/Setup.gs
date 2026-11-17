@@ -101,6 +101,7 @@ function ensureCompanyTabs_(ss) {
   }
   ensureTab_(ss, CARRIERS_TAB, CARRIERS_HEADER);
   ensureTab_(ss, QUOTES_TAB, QUOTES_HEADER);
+  ensureTab_(ss, REQUESTS_TAB, REQUESTS_HEADER);
   var settings = ensureTab_(ss, SETTINGS_TAB, SETTINGS_HEADER);
   var have = settingsFromRows_(settings.getDataRange().getValues());
   companySettingDefs_().forEach(function (d) {
@@ -207,26 +208,91 @@ function buildSetupSection_(settings) {
       .setOnClickAction(CardService.newAction().setFunctionName('onJoinWorkspace')));
 }
 
+/** The fields editable from the sidebar: [Settings key, settings property, label]. */
+var EDITABLE_COMPANY_SETTINGS = [
+  ['COMPANY_NAME', 'companyName', 'Company name (on the заявки)'],
+  ['ASSISTANT_NAME', 'assistantName', 'Assistant name, e.g. "Orbit Assistant"'],
+  ['LOGO_URL', 'logoUrl', 'Logo link (https, PNG or JPG)'],
+  ['BRAND_COLOR', 'brandColor', 'Button color, e.g. #1d5b86'],
+  ['OFFER_TERMS', 'offerTerms', 'Offer terms'],
+  ['CLIENT_PAYMENT_TERMS', 'clientPaymentTerms', 'Payment terms for clients'],
+  ['CARRIER_PAYMENT_TERMS', 'carrierPaymentTerms', 'Payment terms for carriers']
+];
+
+/**
+ * Checks the company settings typed in the sidebar. Returns {values: {KEY: value}}
+ * or {error: 'what to fix'}. Empty logo/color are allowed (= no logo, default color).
+ */
+function validateCompanySettings_(input) {
+  var values = {};
+  EDITABLE_COMPANY_SETTINGS.forEach(function (f) { values[f[0]] = String(input[f[0]] || '').trim(); });
+  if (values.LOGO_URL && !safeLogoUrl_(values.LOGO_URL)) {
+    return { error: 'The logo link must start with https:// and have no spaces.' };
+  }
+  if (values.BRAND_COLOR) {
+    var color = safeColor_(values.BRAND_COLOR);
+    var typed = values.BRAND_COLOR.replace(/^#/, '').toLowerCase();
+    if (color === DEFAULT_BRAND_COLOR && typed !== DEFAULT_BRAND_COLOR.slice(1)) {
+      return { error: 'Enter the color as a hex code, e.g. #1d5b86.' };
+    }
+    values.BRAND_COLOR = color;
+  }
+  if (values.ASSISTANT_NAME.length > 40) return { error: 'Keep the assistant name under 40 characters.' };
+  return { values: values };
+}
+
 function buildWorkspaceSection_(settings) {
   var url = 'https://docs.google.com/spreadsheets/d/' + settings.historySheetId + '/edit';
-  return CardService.newCardSection().setHeader('Your company')
-    .addWidget(iconField_('STORE', 'Company', settings.companyName || 'Not set: add it on the Settings tab'))
+  var section = CardService.newCardSection().setHeader('Company settings')
+    .setCollapsible(true).setNumUncollapsibleWidgets(2)
+    .addWidget(iconField_('STORE', 'Company', settings.companyName || 'Not set yet: fill in below'))
     .addWidget(CardService.newTextButton()
       .setText('Open company sheet')
-      .setOpenLink(CardService.newOpenLink().setUrl(url)))
+      .setOpenLink(CardService.newOpenLink().setUrl(url)));
+  EDITABLE_COMPANY_SETTINGS.forEach(function (f) {
+    section.addWidget(CardService.newTextInput()
+      .setFieldName('company_' + f[0])
+      .setTitle(f[2])
+      .setValue(settings[f[1]] || ''));
+  });
+  return section
+    .addWidget(primaryButton_('Save company settings', settings)
+      .setOnClickAction(CardService.newAction().setFunctionName('onSaveCompanySettings')))
     .addWidget(CardService.newTextParagraph().setText(
-      'Company name, terms, and your assistant\'s name, logo and color are on the sheet\'s ' +
-      '<b>Settings</b> tab. ' +
-      'To add colleagues, share the "Freight Assistant" folder with them, then they paste the ' +
-      'sheet link here.'))
+      'These apply to everyone at your company. To add colleagues, share the ' +
+      '"Freight Assistant" folder with them; they paste the company sheet link in their sidebar.'));
+}
+
+function buildSignatureSection_(settings) {
+  return CardService.newCardSection().setHeader('Your signature')
     .addWidget(CardService.newTextInput()
       .setFieldName('signature')
-      .setTitle('Your email signature')
+      .setTitle('Added to your offers and emails')
       .setMultiline(true)
       .setValue(settings.signature || ''))
     .addWidget(CardService.newTextButton()
       .setText('Save signature')
       .setOnClickAction(CardService.newAction().setFunctionName('onSaveSignature')));
+}
+
+function onSaveCompanySettings(e) {
+  var inputs = e.commonEventObject.formInputs || {};
+  var typed = {};
+  EDITABLE_COMPANY_SETTINGS.forEach(function (f) {
+    var field = inputs['company_' + f[0]];
+    typed[f[0]] = field ? field.stringInputs.value[0] : '';
+  });
+  var checked = validateCompanySettings_(typed);
+  if (checked.error) return notify_(checked.error);
+  try {
+    var ss = SpreadsheetApp.openById(getCompanySheetId_());
+    Object.keys(checked.values).forEach(function (key) {
+      writeCompanySetting_(ss, key, checked.values[key]);
+    });
+  } catch (err) {
+    return notify_('Could not save: ' + err.message);
+  }
+  return refreshHomepage_('Company settings saved.');
 }
 
 function onCreateWorkspace(e) {

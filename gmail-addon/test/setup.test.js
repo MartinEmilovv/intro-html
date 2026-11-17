@@ -9,7 +9,7 @@ const vm = require('node:vm');
 
 const ctx = {};
 vm.createContext(ctx);
-for (const f of ['Config.gs', 'History.gs', 'Carriers.gs', 'Quotes.gs', 'Orders.gs', 'Setup.gs']) {
+for (const f of ['Config.gs', 'History.gs', 'Carriers.gs', 'Quotes.gs', 'Orders.gs', 'Brand.gs', 'Requests.gs', 'Setup.gs']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctx);
 }
 const plain = (x) => JSON.parse(JSON.stringify(x));
@@ -63,4 +63,42 @@ test('no company data is kept in the shared Config', () => {
   assert.strictEqual(ctx.CONFIG.HISTORY_SHEET_ID, undefined);
   assert.strictEqual(ctx.CONFIG.SIGNATURE, undefined);
   assert.strictEqual(ctx.CONFIG.COMPANY_NAME, undefined);
+});
+
+test('saved analyses are found by email ID', () => {
+  const values = [
+    ['date', 'request', 'route', 'data'],
+    ['2026-11-16', '1a1e59d5712e8a68', 'Sofia → Duisburg', '{}'],
+    ['2026-11-17', '1a1e59d5712e9999', 'Ruse → Bucharest', '{}'],
+  ];
+  assert.strictEqual(ctx.findRequestRow_(values, '1a1e59d5712e9999'), 2);
+  assert.strictEqual(ctx.findRequestRow_(values, 'unknown'), -1);
+  assert.strictEqual(ctx.findRequestRow_(values, 'request'), -1); // never matches the header
+});
+
+test('company settings from the sidebar: valid values are cleaned up', () => {
+  const r = plain(ctx.validateCompanySettings_({
+    COMPANY_NAME: ' Orbit Bulgaria ', ASSISTANT_NAME: 'Orbit Assistant',
+    LOGO_URL: 'https://example.com/logo.png', BRAND_COLOR: 'E30613',
+    OFFER_TERMS: 'Цена без ДДС.', CLIENT_PAYMENT_TERMS: '30 дни', CARRIER_PAYMENT_TERMS: '45 дни',
+  }));
+  assert.strictEqual(r.error, undefined);
+  assert.strictEqual(r.values.COMPANY_NAME, 'Orbit Bulgaria');
+  assert.strictEqual(r.values.BRAND_COLOR, '#e30613');
+  assert.strictEqual(r.values.LOGO_URL, 'https://example.com/logo.png');
+});
+
+test('company settings from the sidebar: empty logo and color are allowed', () => {
+  const r = plain(ctx.validateCompanySettings_({ COMPANY_NAME: 'X' }));
+  assert.strictEqual(r.error, undefined);
+  assert.strictEqual(r.values.LOGO_URL, '');
+  assert.strictEqual(r.values.BRAND_COLOR, '');
+  assert.strictEqual(r.values.OFFER_TERMS, '');
+});
+
+test('company settings from the sidebar: mistakes are explained', () => {
+  assert.match(ctx.validateCompanySettings_({ LOGO_URL: 'www.orbit.bg/logo.png' }).error, /https/);
+  assert.match(ctx.validateCompanySettings_({ BRAND_COLOR: 'red' }).error, /hex code/);
+  assert.match(ctx.validateCompanySettings_({ ASSISTANT_NAME: 'x'.repeat(41) }).error, /40/);
+  assert.strictEqual(ctx.validateCompanySettings_({ BRAND_COLOR: '#1d5b86' }).error, undefined);
 });

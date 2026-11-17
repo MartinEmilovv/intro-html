@@ -134,8 +134,11 @@ Built so far in the Gmail add-on:
   Company settings and the order counter live on its Settings tab, signatures per
   user; colleagues join by sharing the folder and pasting the sheet link. Only the
   API key is shared (Script Properties).
-- Branding per company (Settings tab): assistant name (e.g. "Orbit Assistant"), logo
-  and button color in the sidebar; icons, colored main buttons, collapsible history.
+- Branding per company: assistant name (e.g. "Orbit Assistant"), logo and button color,
+  edited with the other company settings in the sidebar; icons, colored main buttons,
+  collapsible history.
+- Saved analyses (Requests tab): reopening an email shows its analysis without a new
+  Claude call.
 
 ## To-do
 
