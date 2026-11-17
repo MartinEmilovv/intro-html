@@ -9,12 +9,21 @@
 
 var CACHE_SECONDS = 6 * 60 * 60;
 
+/** This user's company sheet and signature, plus that company's settings (Setup.gs). */
 function getSettings_() {
-  var p = PropertiesService.getScriptProperties();
-  var get = function (name) { return p.getProperty(name) || CONFIG[name]; };
+  var sheetId = getCompanySheetId_();
+  var company = {};
+  if (sheetId) {
+    try {
+      company = readCompanySettings_(SpreadsheetApp.openById(sheetId));
+    } catch (err) {
+      // Reading the sheet itself will report the problem where it's needed.
+    }
+  }
+  var get = function (name) { return company[name] || CONFIG[name] || ''; };
   return {
-    historySheetId: get('HISTORY_SHEET_ID'),
-    signature: get('SIGNATURE'),
+    historySheetId: sheetId,
+    signature: getSignature_(),
     offerTerms: get('OFFER_TERMS'),
     companyName: get('COMPANY_NAME'),
     clientPaymentTerms: get('CLIENT_PAYMENT_TERMS'),
@@ -54,12 +63,12 @@ function onHomepage() {
   var hasKey = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   var section = CardService.newCardSection()
     .addWidget(CardService.newTextParagraph().setText(
-      'Open a transport request email and click <b>Analyze request</b>.'))
-    .addWidget(field_('Claude API key', hasKey ? 'Set' : 'Missing: add ANTHROPIC_API_KEY'))
-    .addWidget(field_('Price history sheet', s.historySheetId ? 'Connected' : 'Missing: add HISTORY_SHEET_ID'));
+      'Open a transport request email and click <b>Analyze request</b>.'));
+  if (!hasKey) section.addWidget(field_('Claude API key', 'Missing: add ANTHROPIC_API_KEY in Script Properties'));
   return CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader().setTitle('Freight Assistant'))
     .addSection(section)
+    .addSection(s.historySheetId ? buildWorkspaceSection_(s) : buildSetupSection_())
     .build();
 }
 
@@ -72,10 +81,11 @@ function onGmailMessage(e) {
     .addWidget(CardService.newTextParagraph().setText(
       'Read this email as a transport request and price it from your history.'))
     .addWidget(button);
-  return CardService.newCardBuilder()
+  var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader().setTitle('Freight Assistant'))
-    .addSection(section)
-    .build();
+    .addSection(section);
+  if (!getCompanySheetId_()) card.addSection(buildSetupSection_());
+  return card.build();
 }
 
 // ---- Actions ----------------------------------------------------------------
@@ -352,7 +362,7 @@ function onCreateOrders(e) {
     }
     var sender = parseSender_(message.getFrom());
     var order = {
-      number: nextOrderNumber_(),
+      number: nextOrderNumber_(SpreadsheetApp.openById(settings.historySheetId)),
       date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd.MM.yyyy'),
       language: request.language,
       client_name: get('order_client'),

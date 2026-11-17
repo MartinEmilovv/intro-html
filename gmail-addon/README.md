@@ -31,7 +31,8 @@ the draft opens in Gmail for you to check and send.
 | `Main.gs` | The sidebar cards and buttons |
 | `Claude.gs` | The two Claude API calls: read the request, write the offer |
 | `History.gs` | Reads the price history sheet and finds similar transports (plain code, no AI) |
-| `Config.gs` | Default settings (sheet ID, signature, offer terms, acknowledgment texts); Script Properties override them |
+| `Config.gs` | Defaults and fixed texts shared by every company (acknowledgment and order email texts, starting terms) |
+| `Setup.gs` | Company workspace: each company's own sheet, settings, templates and order counter |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
 | `Quotes.gs` | Records carrier quotes on a Quotes tab |
@@ -49,13 +50,39 @@ You need a Google account and an Anthropic API key.
 Create one at [console.anthropic.com](https://console.anthropic.com) (Settings → API keys)
 and add some credit. Each analyzed email plus draft costs a few cents.
 
-### 2. Create the price history sheet
+### 2. Create the Apps Script project
 
-1. In Google Sheets, create a new spreadsheet and use **File → Import → Upload**
-   to import `sample-history.csv` (or paste in your own data in the same columns).
-2. Copy the sheet ID from its URL: the long part between `/d/` and `/edit`.
+1. Go to [script.google.com](https://script.google.com) and click **New project**.
+   Name it "Freight Assistant".
+2. Open **Project Settings** (gear icon) and tick
+   **Show "appsscript.json" manifest file in editor**.
+3. Back in the **Editor**, replace the contents of `appsscript.json` with this
+   folder's `appsscript.json`, and paste all the `.gs` files into `Code.gs` (or one
+   script file each; Apps Script treats them as one program). Save.
+4. In **Project Settings → Script Properties**, add `ANTHROPIC_API_KEY` with your key.
+   It's the only setting kept there: everything else belongs to each company.
 
-Columns (first tab, first row is the header):
+### 3. Install it in Gmail
+
+1. Click **Deploy → Test deployments**, choose **Gmail**, click **Install**.
+2. Reload Gmail and open Freight Assistant in the right-hand side panel (with no email
+   selected). Google asks you to authorize it the first time.
+
+### 4. Set up the company
+
+In the sidebar, under **Set up your company**:
+
+- **Create company workspace** (a new company): creates a Google Sheet with the tabs
+  **History**, **Carriers**, **Quotes** and **Settings**, plus the two заявки templates,
+  in a "Freight Assistant" folder in your Drive.
+- **Use this sheet** (an existing company): paste the link of a company sheet, e.g. one
+  a colleague shared, or a price history sheet you made before. Missing tabs are added.
+
+Then open the sheet's **Settings** tab and fill in the company name and terms, and save
+your email signature in the sidebar. To start with sample data, import
+`sample-history.csv` into the History tab and `sample-carriers.csv` into Carriers.
+
+**History tab** columns (header row, any order):
 
 | Column | Example | Notes |
 |---|---|---|
@@ -67,51 +94,38 @@ Columns (first tab, first row is the header):
 | `truck_type` | curtainsider | One of: curtainsider, reefer, mega, box, flatbed, other |
 | `sold_eur` | 2450 | What you charged the client |
 | `carrier_eur` | 2050 | What the carrier charged you |
-| `carrier` | Пример Транс ЕООД | Optional. The carrier's name, exactly as on the Carriers tab |
+| `carrier` | Пример Транс ЕООД | The carrier's name, exactly as on the Carriers tab |
+| `order_number` | 2026-0001 | Filled in for orders created by the add-on |
 
-Add a second tab named **Carriers** (import `sample-carriers.csv` into it to start):
+**Carriers tab**:
 
 | Column | Example | Notes |
 |---|---|---|
-| `carrier` | Пример Транс ЕООД | Same name as in the history tab's `carrier` column |
-| `contact_person` | Георги Иванов | Used in the greeting of price requests |
-| `email` | georgi@… | Carriers without an email are listed but can't be ticked |
+| `carrier` | Пример Транс ЕООД | Same name as in the History tab's `carrier` column |
+| `contact_person` | Георги Иванов | Used in the greeting of price requests and заявки |
+| `email` | georgi@… | Carriers without an email are listed but can't be emailed |
 | `phone` | +359 88 … | Shown in the sidebar. In Google Sheets, type a `'` before a leading `+` |
-| `language` | bg | `bg` or `en`: the language of price requests (empty = bg) |
+| `language` | bg | `bg` or `en`: the language of emails to them (empty = bg) |
 
-### 3. Create the Apps Script project
+**Settings tab**: `COMPANY_NAME`, `OFFER_TERMS`, `CLIENT_PAYMENT_TERMS`,
+`CARRIER_PAYMENT_TERMS`; and, filled in automatically, the template IDs and the order
+counter (`NEXT_ORDER_NUMBER`, `ORDER_NUMBER_YEAR`).
 
-1. Go to [script.google.com](https://script.google.com) and click **New project**.
-   Name it "Freight Assistant".
-2. Open **Project Settings** (gear icon) and tick
-   **Show "appsscript.json" manifest file in editor**.
-3. Back in the **Editor**, replace the contents of `appsscript.json` with this
-   folder's `appsscript.json`.
-4. Rename `Code.gs` to `Main` and paste in `Main.gs`. Add three more script files
-   (**+** → Script) named `Claude`, `History` and `Config`, and paste in
-   `Claude.gs`, `History.gs` and `Config.gs`. Save. (All four can also go into one
-   file: Apps Script treats them as one program.)
+### Several companies, several colleagues
 
-### 4. Add your settings
-
-In **Project Settings → Script Properties**, add your API key. The other settings
-can go either here or in `Config.gs`:
-
-| Property | Value |
-|---|---|
-| `ANTHROPIC_API_KEY` | Your API key from step 1 |
-| `HISTORY_SHEET_ID` | The sheet ID from step 2 |
-| `SIGNATURE` | How offers are signed, e.g. `Martin Emilov, Your Company Ltd, +359 ...` |
-| `OFFER_TERMS` | Optional. Defaults to "Price excludes VAT. Offer valid for 48 hours." |
-
-### 5. Install it in your Gmail
-
-1. In the editor, click **Deploy → Test deployments**.
-2. Under **Application(s)**, choose **Gmail**, then click **Install**.
-3. Open Gmail (reload it). Open any email, then click the Freight Assistant icon in
-   the right-hand side panel. The first time, Google asks you to authorize it.
-
-Only you can see a test deployment, and it updates whenever you save the script.
+- **Each company's data stays in that company's own Google account**: its sheet, its
+  templates, its transport folders, its order numbers. The add-on runs as the person
+  using it, so it can only open what that person can open.
+- **Colleagues at the same company:** share the "Freight Assistant" folder with them
+  (Editor). Each colleague then pastes the company sheet link under **Use this sheet**.
+  They share the history, carriers, quotes, settings, templates and order counter; each
+  keeps their own signature.
+- **Shared by everyone:** only the Anthropic API key (Script Properties), which users
+  never see. Before selling, it moves to our own server.
+- **Updating from an earlier version:** paste your existing price history sheet link
+  under **Use this sheet**. Template IDs, the order counter and the signature that
+  earlier versions kept in Script Properties move to that sheet's Settings tab (and
+  your user settings), then are removed from Script Properties.
 
 ## Try it
 
@@ -192,20 +206,20 @@ The form is pre-filled: client company (from the sender), agreed price (your
 offer, or the suggestion), carrier and carrier price (the cheapest quote). Add the
 truck plates if you have them, then **Create заявки**:
 
-1. The order gets a running number: `2026-0001`, `2026-0002`, ... (restarts each year;
-   stored in Script Properties as `NEXT_ORDER_NUMBER`).
+1. The order gets the company's next running number: `2026-0001`, `2026-0002`, ...
+   (restarts each year; kept on the Settings tab as `NEXT_ORDER_NUMBER`).
 2. Both заявки are filled from Google Docs templates and saved as PDFs: the client's
    with the **selling price**, the carrier's with the **carrier price**.
 3. Two drafts: a reply to the client asking for their official заявка (their PDF
    attached), and an email to the carrier (their PDF attached). Nothing is sent.
-4. A folder `Freight Assistant/Transports/2026-0001 Sofia–Duisburg` in Drive with both
+4. A folder `Transports/2026-0001 Sofia–Duisburg` in the company's Freight Assistant folder, with both
    заявки (Doc and PDF), the client email thread as a PDF, and an order summary.
 5. The transport is added to the History tab, so future suggestions learn from it.
 
-**Templates.** Run `setUpTemplates` once from the editor: it creates two starter
-templates in Drive (`Freight Assistant` folder) and logs their links. Edit them freely
-(logo, company details, terms) or point `CLIENT_TEMPLATE_ID` / `CARRIER_TEMPLATE_ID`
-in Script Properties at your own Google Docs. Placeholders: `{{order_number}}`
+**Templates.** Each company gets two starter templates in its Freight Assistant folder
+(created with the workspace, or on the first order). Edit them freely (logo, company
+details, terms) or point `CLIENT_TEMPLATE_ID` / `CARRIER_TEMPLATE_ID` on the Settings
+tab at your own Google Docs. `setUpTemplates` (run from the editor) logs their links. Placeholders: `{{order_number}}`
 `{{date}}` `{{company}}` `{{client}}` `{{carrier}}` `{{carrier_contact}}`
 `{{truck_plates}}` `{{loading_place}}` `{{loading_date}}` `{{unloading_place}}`
 `{{delivery_date}}` `{{cargo}}` `{{pallets}}` `{{weight}}` `{{truck_type}}` `{{price}}`
@@ -216,8 +230,8 @@ price and the client payment terms; the carrier's only the carrier, the carrier 
 and the carrier payment terms (tested in `test/orders.test.js`). A placeholder with no
 value for that side is left blank.
 
-**Settings** in `Config.gs`: `COMPANY_NAME`, `CLIENT_PAYMENT_TERMS`,
-`CARRIER_PAYMENT_TERMS`, and the email texts in `ORDER_EMAILS`.
+**Settings:** company name and payment terms on the company sheet's Settings tab; the
+email texts in `ORDER_EMAILS` in `Config.gs`.
 
 ## Known limits of this MVP
 

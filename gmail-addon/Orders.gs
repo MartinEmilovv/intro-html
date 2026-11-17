@@ -10,10 +10,10 @@
  *    thread as a PDF and an order summary.
  * 5. Adds the transport to the History tab, so future suggestions learn from it.
  *
- * Templates: on first use, starter templates are created in Drive under
- * "Freight Assistant". Edit them freely (logo, terms, layout) or replace them with
- * your own: any Google Doc using the {{placeholders}} below works. Their IDs are
- * stored in Script Properties (CLIENT_TEMPLATE_ID, CARRIER_TEMPLATE_ID).
+ * Templates: starter templates are created in the company's "Freight Assistant"
+ * folder. Edit them freely (logo, terms, layout) or replace them with your own:
+ * any Google Doc using the {{placeholders}} below works. Their IDs are on the
+ * company sheet's Settings tab (CLIENT_TEMPLATE_ID, CARRIER_TEMPLATE_ID).
  *
  * Placeholders: {{order_number}} {{date}} {{company}} {{client}} {{carrier}}
  * {{carrier_contact}} {{truck_plates}} {{loading_place}} {{loading_date}}
@@ -152,23 +152,25 @@ function orderSummaryText_(order) {
 
 // ---- Google services --------------------------------------------------------
 
-/** Run once from the editor to create the starter templates and see their links. */
+/** Run from the editor to check the templates exist and see their links. */
 function setUpTemplates() {
-  var ids = ensureTemplates_();
+  var sheetId = getCompanySheetId_();
+  if (!sheetId) throw new Error('Set up your company in the Gmail sidebar first.');
+  var ids = ensureTemplates_(SpreadsheetApp.openById(sheetId));
   console.log('Client заявка template: https://docs.google.com/document/d/' + ids.client + '/edit');
   console.log('Carrier заявка template: https://docs.google.com/document/d/' + ids.carrier + '/edit');
 }
 
-function nextOrderNumber_() {
+/** The company's next order number, from its Settings tab. */
+function nextOrderNumber_(ss) {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    var p = PropertiesService.getScriptProperties();
-    var year = new Date().getFullYear();
-    var n = Number(p.getProperty('NEXT_ORDER_NUMBER')) || 1;
-    if (Number(p.getProperty('ORDER_NUMBER_YEAR')) !== year) n = 1;
-    p.setProperties({ NEXT_ORDER_NUMBER: String(n + 1), ORDER_NUMBER_YEAR: String(year) });
-    return formatOrderNumber_(year, n);
+    var s = readCompanySettings_(ss);
+    var state = nextOrderState_(s.NEXT_ORDER_NUMBER, s.ORDER_NUMBER_YEAR, new Date().getFullYear());
+    writeCompanySetting_(ss, 'NEXT_ORDER_NUMBER', String(state.next));
+    writeCompanySetting_(ss, 'ORDER_NUMBER_YEAR', String(state.year));
+    return state.number;
   } finally {
     lock.releaseLock();
   }
@@ -183,27 +185,33 @@ function rootFolder_() {
   return getOrCreateFolder_(DriveApp.getRootFolder(), ROOT_FOLDER);
 }
 
-function templateExists_(id) {
-  if (!id) return false;
-  try {
-    return !DriveApp.getFileById(id).isTrashed();
-  } catch (err) {
-    return false;
+/**
+ * The company's template, created if it has none (or it was deleted). If it exists
+ * but this user can't open it, that's a sharing problem: never replace the
+ * company's template with a new one because of it.
+ */
+function ensureTemplate_(ss, key, name, lines) {
+  var id = readCompanySettings_(ss)[key];
+  if (id) {
+    var file;
+    try {
+      file = DriveApp.getFileById(id);
+    } catch (err) {
+      throw new Error('Can\'t open the company\'s заявка template. Ask the colleague who set up ' +
+        'Freight Assistant to share the "Freight Assistant" folder with you.');
+    }
+    if (!file.isTrashed()) return id;
   }
+  id = createTemplate_(name, lines, companyFolder_(ss));
+  writeCompanySetting_(ss, key, id);
+  return id;
 }
 
-function ensureTemplates_() {
-  var p = PropertiesService.getScriptProperties();
-  var ids = { client: p.getProperty('CLIENT_TEMPLATE_ID'), carrier: p.getProperty('CARRIER_TEMPLATE_ID') };
-  if (!templateExists_(ids.client)) {
-    ids.client = createTemplate_('Freight Assistant – шаблон заявка клиент', CLIENT_TEMPLATE_LINES);
-    p.setProperty('CLIENT_TEMPLATE_ID', ids.client);
-  }
-  if (!templateExists_(ids.carrier)) {
-    ids.carrier = createTemplate_('Freight Assistant – шаблон заявка превозвач', CARRIER_TEMPLATE_LINES);
-    p.setProperty('CARRIER_TEMPLATE_ID', ids.carrier);
-  }
-  return ids;
+function ensureTemplates_(ss) {
+  return {
+    client: ensureTemplate_(ss, 'CLIENT_TEMPLATE_ID', 'Freight Assistant – шаблон заявка клиент', CLIENT_TEMPLATE_LINES),
+    carrier: ensureTemplate_(ss, 'CARRIER_TEMPLATE_ID', 'Freight Assistant – шаблон заявка превозвач', CARRIER_TEMPLATE_LINES)
+  };
 }
 
 var CLIENT_TEMPLATE_LINES = [
@@ -250,7 +258,7 @@ var CARRIER_TEMPLATE_LINES = [
   ['text', 'Възложител: …………………………        Превозвач: …………………………']
 ];
 
-function createTemplate_(name, lines) {
+function createTemplate_(name, lines, folder) {
   var doc = DocumentApp.create(name);
   var body = doc.getBody();
   body.clear();
@@ -261,7 +269,7 @@ function createTemplate_(name, lines) {
   });
   doc.saveAndClose();
   var file = DriveApp.getFileById(doc.getId());
-  file.moveTo(rootFolder_());
+  file.moveTo(folder);
   return doc.getId();
 }
 
@@ -298,8 +306,8 @@ function threadPdf_(thread, name) {
   return Utilities.newBlob(html, 'text/html', name + '.html').getAs('application/pdf').setName(name + '.pdf');
 }
 
-function appendToHistory_(sheetId, order) {
-  var sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+function appendToHistory_(ss, order) {
+  var sheet = historySheet_(ss);
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   sheet.appendRow(historyRowFor_(headers, order));
 }
@@ -309,8 +317,9 @@ function appendToHistory_(sheetId, order) {
  * Returns the transport folder.
  */
 function createOrderDocuments_(order, message, settings) {
-  var templates = ensureTemplates_();
-  var folder = getOrCreateFolder_(getOrCreateFolder_(rootFolder_(), TRANSPORTS_FOLDER), orderFolderName_(order));
+  var ss = SpreadsheetApp.openById(settings.historySheetId);
+  var templates = ensureTemplates_(ss);
+  var folder = getOrCreateFolder_(getOrCreateFolder_(companyFolder_(ss), TRANSPORTS_FOLDER), orderFolderName_(order));
 
   var clientPdf = fillTemplate_(templates.client, buildOrderFields_(order, 'client', settings),
     'Заявка ' + order.number + ' – клиент', folder);
@@ -324,6 +333,6 @@ function createOrderDocuments_(order, message, settings) {
   var carrierEmail = buildCarrierOrderEmail_(order, settings.signature);
   GmailApp.createDraft(order.carrier_email, carrierEmail.subject, carrierEmail.body, { attachments: [carrierPdf] });
 
-  if (settings.historySheetId) appendToHistory_(settings.historySheetId, order);
+  appendToHistory_(ss, order);
   return folder;
 }

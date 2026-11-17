@@ -2,7 +2,7 @@
  * Price history: reads past transports from a Google Sheet and finds ones
  * similar to a new request. Plain code, no AI, so the numbers are exact.
  *
- * Sheet layout (first tab, header row, any column order):
+ * Sheet layout (History tab, or the first tab; header row, any column order):
  *   date | from_city | from_country | to_city | to_country | truck_type | sold_eur | carrier_eur | carrier
  * The carrier column is optional and must match a name on the Carriers tab (Carriers.gs).
  * Cities in English, countries as 2-letter codes (BG, DE), truck_type one of
@@ -11,9 +11,9 @@
 
 var MAX_SIMILAR = 5;
 
-/** Reads all rows of the history tab (the first tab) as objects keyed by header name. */
+/** Reads all rows of the History tab as objects keyed by header name. */
 function readHistory_(sheetId) {
-  var values = SpreadsheetApp.openById(sheetId).getSheets()[0].getDataRange().getValues();
+  var values = historySheet_(SpreadsheetApp.openById(sheetId)).getDataRange().getValues();
   return rowsToObjects_(values);
 }
 

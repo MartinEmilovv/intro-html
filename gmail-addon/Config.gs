@@ -1,10 +1,13 @@
 /**
- * Defaults for settings. A Script Property with the same name overrides each one.
+ * Defaults and fixed texts, the same for every company using the add-on.
+ *
+ * Each company's own settings (company name, terms, templates, order counter) live
+ * on the Settings tab of its company sheet, and each person's signature in the
+ * sidebar (see Setup.gs). OFFER_TERMS and the payment terms below are only the
+ * starting values for a new company.
  * Never put the API key here: set ANTHROPIC_API_KEY in Script Properties instead.
  */
 var CONFIG = {
-  HISTORY_SHEET_ID: '',  // ID of the price history Google Sheet
-  SIGNATURE: '',         // How offers and acknowledgments are signed; empty = no signature
   OFFER_TERMS: 'Price excludes VAT. Offer valid for 48 hours.',
 
   // Automatic acknowledgment of new transport requests (see Ack.gs).
@@ -27,8 +30,7 @@ var CONFIG = {
   // Also acknowledge emails you send to yourself. Only for testing.
   ACK_INCLUDE_OWN_EMAILS: false,
 
-  // Заявки (see Orders.gs). Your company as it appears on the documents.
-  COMPANY_NAME: '',
+  // Заявки (see Orders.gs): starting payment terms for a new company.
   CLIENT_PAYMENT_TERMS: '30 дни от датата на фактурата',
   CARRIER_PAYMENT_TERMS: '45 дни след получаване на оригинални CMR и фактура',
   // Texts of the emails that carry the заявки. {order} = order number.

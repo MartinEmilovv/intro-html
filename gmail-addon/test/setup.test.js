@@ -1,0 +1,66 @@
+// Run with: node --test test/setup.test.js
+// Tests the company workspace helpers: sheet links, the Settings tab and the
+// per-company order counter.
+const test = require('node:test');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const ctx = {};
+vm.createContext(ctx);
+for (const f of ['Config.gs', 'History.gs', 'Carriers.gs', 'Quotes.gs', 'Orders.gs', 'Setup.gs']) {
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctx);
+}
+const plain = (x) => JSON.parse(JSON.stringify(x));
+const ID = '15bU9Qq22EsF6yxXxQ6vB9nP7dGmANWpKtgOigZt1R1g';
+
+test('sheet ID from a link, or the ID itself', () => {
+  assert.strictEqual(ctx.parseSheetId_('https://docs.google.com/spreadsheets/d/' + ID + '/edit?usp=sharing'), ID);
+  assert.strictEqual(ctx.parseSheetId_('  ' + ID + ' '), ID);
+  assert.strictEqual(ctx.parseSheetId_('https://drive.google.com/drive/folders/abc'), null);
+  assert.strictEqual(ctx.parseSheetId_(''), null);
+  assert.strictEqual(ctx.parseSheetId_('not a link'), null);
+});
+
+test('Settings tab rows become a map of values, skipping blanks', () => {
+  const rows = [
+    ['setting', 'value', 'what it is'],
+    ['COMPANY_NAME', '  Спедиция Пример ООД ', ''],
+    ['NEXT_ORDER_NUMBER', 7, ''],
+    ['', 'ignored', ''],
+    ['OFFER_TERMS', null, ''],
+  ];
+  assert.deepStrictEqual(plain(ctx.settingsFromRows_(rows)),
+    { COMPANY_NAME: 'Спедиция Пример ООД', NEXT_ORDER_NUMBER: '7', OFFER_TERMS: '' });
+});
+
+test('order counter: continues within a year, restarts in a new year, starts at 1', () => {
+  assert.deepStrictEqual(plain(ctx.nextOrderState_('7', '2026', 2026)), { number: '2026-0007', next: 8, year: 2026 });
+  assert.deepStrictEqual(plain(ctx.nextOrderState_('42', '2026', 2027)), { number: '2027-0001', next: 2, year: 2027 });
+  assert.deepStrictEqual(plain(ctx.nextOrderState_('', '', 2026)), { number: '2026-0001', next: 2, year: 2026 });
+});
+
+test('two companies keep their own counters', () => {
+  // Each company's counter is read from and written to its own Settings tab.
+  const a = ctx.nextOrderState_('12', '2026', 2026);
+  const b = ctx.nextOrderState_('', '', 2026);
+  assert.strictEqual(a.number, '2026-0012');
+  assert.strictEqual(b.number, '2026-0001');
+});
+
+test('every company setting has a default and a description', () => {
+  const defs = plain(ctx.companySettingDefs_());
+  const keys = defs.map((d) => d[0]);
+  for (const key of ['COMPANY_NAME', 'OFFER_TERMS', 'CLIENT_PAYMENT_TERMS', 'CARRIER_PAYMENT_TERMS',
+    'CLIENT_TEMPLATE_ID', 'CARRIER_TEMPLATE_ID', 'NEXT_ORDER_NUMBER', 'ORDER_NUMBER_YEAR']) {
+    assert.ok(keys.includes(key), 'missing ' + key);
+  }
+  assert.ok(defs.every((d) => typeof d[1] === 'string' && d[2].length > 0));
+});
+
+test('no company data is kept in the shared Config', () => {
+  assert.strictEqual(ctx.CONFIG.HISTORY_SHEET_ID, undefined);
+  assert.strictEqual(ctx.CONFIG.SIGNATURE, undefined);
+  assert.strictEqual(ctx.CONFIG.COMPANY_NAME, undefined);
+});

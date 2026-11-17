@@ -129,6 +129,11 @@ Built so far in the Gmail add-on:
 - Order confirmed: both заявки as PDFs from editable starter templates, email drafts
   to client and carrier, running order numbers, transport folder in Drive, and the
   transport added to the History tab.
+- Multi-company: each company sets up its own workspace in the sidebar (sheet with
+  History, Carriers, Quotes, Settings tabs; templates; folder) in its own Drive.
+  Company settings and the order counter live on its Settings tab, signatures per
+  user; colleagues join by sharing the folder and pasting the sheet link. Only the
+  API key is shared (Script Properties).
 
 ## To-do
 
@@ -140,7 +145,8 @@ Built so far in the Gmail add-on:
 - [ ] Share real заявки examples (client's заявка за транспорт and заявка към превозвач),
   anonymized, in Google Drive, to replace the starter templates; and say whether the
   order number should come from the TMS (the MVP uses a running number).
-- [ ] Fill in COMPANY_NAME and payment terms in Config.gs.
+- [ ] After updating: paste your price history sheet link under "Use this sheet" in the
+  sidebar, then fill in the company name and terms on its Settings tab.
 - [ ] Test the acknowledgment, carriers, quotes and заявки features in Gmail.
 - [ ] Find out which TMS the target forwarders use, and for each: does it have an API
   or a file import (Excel/CSV/XML), and does it run in a browser or as a desktop program?
@@ -149,15 +155,6 @@ Built so far in the Gmail add-on:
 - [ ] "Send via Viber" button per carrier (Viber Desktop link with the request
   pre-filled, or open chat + copy text), depending on the Viber test.
 - [ ] Save the carrier's email thread to the transport folder too.
-
-**Before the second client (multi-company)**
-- [ ] Per-company settings: template IDs, order number counter and sheet ID are in Script
-  Properties, which every user of a published add-on shares. Move them to per-company
-  storage (per user now, our database later), so order numbers and templates never mix.
-- [ ] First-run setup: create the price history sheet (History, Carriers, Quotes tabs) and
-  the templates in the new company's own Drive, instead of the built-in sheet ID.
-- [ ] Several forwarders in one company share one sheet, one order counter and the same
-  templates (through normal Google sharing).
 
 **Before selling to clients**
 - [ ] Move the Anthropic API key to a small server of ours: the add-on calls our server,
