@@ -165,8 +165,19 @@ Built so far in the Gmail add-on:
 - [ ] Measure real Claude cost per forwarder per month to set the subscription price.
 
 **Later**
-- [ ] Freight exchanges: ask Speditor.net whether it has an API; TIMOCOM partner
-  integration. Transporeon as a source of incoming requests.
+- [ ] Freight exchanges (Speditor.net first, then TIMOCOM, Trans.eu):
+  - **A. Carriers by destination:** suggest carriers whose profiles list the request's
+    destination country, marked as new next to our own carriers.
+  - **B. Truck matching:** match the load against posted trucks: free near the loading
+    address (real distance), around the loading date, heading towards the destination,
+    enough free loading meters (load converted to LDM, e.g. 33 EUR pallets = 13.6 m).
+    Rank, explain why, draft the quote request.
+  - Data access is the blocker; never scrape against the platform's terms (risks the
+    forwarder's account). Ask Speditor.net: (1) API or data partnership? (2) email alerts
+    for matching postings (the add-on could read them in Gmail)? (3) do terms allow
+    automated/AI-assisted access by a logged-in user? Fallback: forwarder pastes search
+    results into the sidebar.
+  - Transporeon as a source of incoming requests.
 - [ ] Mailbox-level (IMAP) connection for clients not on Gmail/Outlook, saving drafts
   into any mailbox.
 - [ ] Outlook add-in.
