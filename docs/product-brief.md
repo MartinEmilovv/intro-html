@@ -139,6 +139,8 @@ Built so far in the Gmail add-on:
   collapsible history.
 - Saved analyses (Requests tab): reopening an email shows its analysis without a new
   Claude call.
+- Sidebar in English or Bulgarian, switched per person with one button (follows the
+  Google account language at first).
 
 ## To-do
 

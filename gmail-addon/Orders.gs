@@ -197,8 +197,7 @@ function ensureTemplate_(ss, key, name, lines) {
     try {
       file = DriveApp.getFileById(id);
     } catch (err) {
-      throw new Error('Can\'t open the company\'s заявка template. Ask the colleague who set up ' +
-        'Freight Assistant to share the "Freight Assistant" folder with you.');
+      throw new Error(t_('template_access'));
     }
     if (!file.isTrashed()) return id;
   }

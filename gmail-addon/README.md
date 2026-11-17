@@ -35,6 +35,7 @@ the draft opens in Gmail for you to check and send.
 | `Setup.gs` | Company workspace: each company's own sheet, settings, templates and order counter |
 | `Brand.gs` | Each company's assistant name, logo and button color in the sidebar |
 | `Requests.gs` | Saves each analysis (Requests tab), so reopening an email shows it again |
+| `I18n.gs` | Every sidebar text in English and Bulgarian, and the language button |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
 | `Quotes.gs` | Records carrier quotes on a Quotes tab |
@@ -212,6 +213,18 @@ The request is written only from the load: route (cities and countries), dates,
 cargo, pallets, weight and truck type. Your selling price, your client's name and
 the exact addresses are never passed to Claude for this, so they can't end up in a
 carrier email.
+
+## Language
+
+The sidebar works in **English** or **Bulgarian**. The button **Български** / **English**
+(on the start screen, and next to **Analyze again**) switches every title, button,
+label and message. Each person chooses their own; the first time it follows their
+Google account language. Emails and documents to clients and carriers aren't affected:
+they follow the client's or carrier's language. To change a wording, edit `UI_TEXT` in
+`I18n.gs` (`test/i18n.test.js` checks both languages are complete).
+
+What Claude reads from the email (cargo description, missing details) is shown as Claude
+writes it, in English.
 
 ## Reopening an analyzed email
 

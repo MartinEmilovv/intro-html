@@ -152,12 +152,12 @@ function createWorkspace_() {
 /** Existing company sheet (a colleague's, or one set up before this version). */
 function joinWorkspace_(linkOrId) {
   var id = parseSheetId_(linkOrId);
-  if (!id) throw new Error('Paste the link of the company\'s Google Sheet.');
+  if (!id) throw new Error(t_('paste_link'));
   var ss;
   try {
     ss = SpreadsheetApp.openById(id);
   } catch (err) {
-    throw new Error('Can\'t open that sheet. Ask the person who set it up to share it with you (Editor).');
+    throw new Error(t_('cant_open_sheet'));
   }
   ensureCompanyTabs_(ss);
   migrateLegacySettings_(ss);
@@ -194,29 +194,26 @@ function migrateLegacySettings_(ss) {
 // ---- Setup cards and actions ---------------------------------------------------
 
 function buildSetupSection_(settings) {
-  return CardService.newCardSection().setHeader('Set up your company')
-    .addWidget(CardService.newTextParagraph().setText(
-      'Freight Assistant keeps your price history, carriers, quotes and settings in a Google ' +
-      'Sheet in <b>your own</b> Google Drive.'))
-    .addWidget(primaryButton_('Create company workspace', settings)
+  return CardService.newCardSection().setHeader(t_('setup_header'))
+    .addWidget(CardService.newTextParagraph().setText(t_('setup_intro')))
+    .addWidget(primaryButton_(t_('create_workspace'), settings)
       .setOnClickAction(CardService.newAction().setFunctionName('onCreateWorkspace')))
-    .addWidget(CardService.newTextParagraph().setText(
-      'Or, if a colleague already set it up, paste the link of the company sheet they shared with you:'))
-    .addWidget(CardService.newTextInput().setFieldName('sheet_link').setTitle('Company sheet link'))
+    .addWidget(CardService.newTextParagraph().setText(t_('or_join')))
+    .addWidget(CardService.newTextInput().setFieldName('sheet_link').setTitle(t_('sheet_link')))
     .addWidget(CardService.newTextButton()
-      .setText('Use this sheet')
+      .setText(t_('use_sheet'))
       .setOnClickAction(CardService.newAction().setFunctionName('onJoinWorkspace')));
 }
 
-/** The fields editable from the sidebar: [Settings key, settings property, label]. */
+/** The fields editable from the sidebar: [Settings key, settings property]. Labels: set_* in I18n.gs. */
 var EDITABLE_COMPANY_SETTINGS = [
-  ['COMPANY_NAME', 'companyName', 'Company name (on the заявки)'],
-  ['ASSISTANT_NAME', 'assistantName', 'Assistant name, e.g. "Orbit Assistant"'],
-  ['LOGO_URL', 'logoUrl', 'Logo link (https, PNG or JPG)'],
-  ['BRAND_COLOR', 'brandColor', 'Button color, e.g. #1d5b86'],
-  ['OFFER_TERMS', 'offerTerms', 'Offer terms'],
-  ['CLIENT_PAYMENT_TERMS', 'clientPaymentTerms', 'Payment terms for clients'],
-  ['CARRIER_PAYMENT_TERMS', 'carrierPaymentTerms', 'Payment terms for carriers']
+  ['COMPANY_NAME', 'companyName'],
+  ['ASSISTANT_NAME', 'assistantName'],
+  ['LOGO_URL', 'logoUrl'],
+  ['BRAND_COLOR', 'brandColor'],
+  ['OFFER_TERMS', 'offerTerms'],
+  ['CLIENT_PAYMENT_TERMS', 'clientPaymentTerms'],
+  ['CARRIER_PAYMENT_TERMS', 'carrierPaymentTerms']
 ];
 
 /**
@@ -227,51 +224,49 @@ function validateCompanySettings_(input) {
   var values = {};
   EDITABLE_COMPANY_SETTINGS.forEach(function (f) { values[f[0]] = String(input[f[0]] || '').trim(); });
   if (values.LOGO_URL && !safeLogoUrl_(values.LOGO_URL)) {
-    return { error: 'The logo link must start with https:// and have no spaces.' };
+    return { error: t_('logo_https') };
   }
   if (values.BRAND_COLOR) {
     var color = safeColor_(values.BRAND_COLOR);
     var typed = values.BRAND_COLOR.replace(/^#/, '').toLowerCase();
     if (color === DEFAULT_BRAND_COLOR && typed !== DEFAULT_BRAND_COLOR.slice(1)) {
-      return { error: 'Enter the color as a hex code, e.g. #1d5b86.' };
+      return { error: t_('color_hex') };
     }
     values.BRAND_COLOR = color;
   }
-  if (values.ASSISTANT_NAME.length > 40) return { error: 'Keep the assistant name under 40 characters.' };
+  if (values.ASSISTANT_NAME.length > 40) return { error: t_('name_too_long') };
   return { values: values };
 }
 
 function buildWorkspaceSection_(settings) {
   var url = 'https://docs.google.com/spreadsheets/d/' + settings.historySheetId + '/edit';
-  var section = CardService.newCardSection().setHeader('Company settings')
+  var section = CardService.newCardSection().setHeader(t_('company_settings'))
     .setCollapsible(true).setNumUncollapsibleWidgets(2)
-    .addWidget(iconField_('STORE', 'Company', settings.companyName || 'Not set yet: fill in below'))
+    .addWidget(iconField_('STORE', t_('company'), settings.companyName || t_('company_not_set')))
     .addWidget(CardService.newTextButton()
-      .setText('Open company sheet')
+      .setText(t_('open_sheet'))
       .setOpenLink(CardService.newOpenLink().setUrl(url)));
   EDITABLE_COMPANY_SETTINGS.forEach(function (f) {
     section.addWidget(CardService.newTextInput()
       .setFieldName('company_' + f[0])
-      .setTitle(f[2])
+      .setTitle(t_('set_' + f[0]))
       .setValue(settings[f[1]] || ''));
   });
   return section
-    .addWidget(primaryButton_('Save company settings', settings)
+    .addWidget(primaryButton_(t_('save_company'), settings)
       .setOnClickAction(CardService.newAction().setFunctionName('onSaveCompanySettings')))
-    .addWidget(CardService.newTextParagraph().setText(
-      'These apply to everyone at your company. To add colleagues, share the ' +
-      '"Freight Assistant" folder with them; they paste the company sheet link in their sidebar.'));
+    .addWidget(CardService.newTextParagraph().setText(t_('company_note')));
 }
 
 function buildSignatureSection_(settings) {
-  return CardService.newCardSection().setHeader('Your signature')
+  return CardService.newCardSection().setHeader(t_('signature_header'))
     .addWidget(CardService.newTextInput()
       .setFieldName('signature')
-      .setTitle('Added to your offers and emails')
+      .setTitle(t_('signature_title'))
       .setMultiline(true)
       .setValue(settings.signature || ''))
     .addWidget(CardService.newTextButton()
-      .setText('Save signature')
+      .setText(t_('save_signature'))
       .setOnClickAction(CardService.newAction().setFunctionName('onSaveSignature')));
 }
 
@@ -290,18 +285,18 @@ function onSaveCompanySettings(e) {
       writeCompanySetting_(ss, key, checked.values[key]);
     });
   } catch (err) {
-    return notify_('Could not save: ' + err.message);
+    return notify_(t_('save_failed', { error: err.message }));
   }
-  return refreshHomepage_('Company settings saved.');
+  return refreshHomepage_(t_('company_saved'));
 }
 
 function onCreateWorkspace(e) {
   try {
     createWorkspace_();
   } catch (err) {
-    return notify_('Could not create the workspace: ' + err.message);
+    return notify_(t_('workspace_failed', { error: err.message }));
   }
-  return refreshHomepage_('Company workspace created in your Drive, in the "Freight Assistant" folder.');
+  return refreshHomepage_(t_('workspace_created'));
 }
 
 function onJoinWorkspace(e) {
@@ -312,14 +307,14 @@ function onJoinWorkspace(e) {
   } catch (err) {
     return notify_(err.message);
   }
-  return refreshHomepage_('Connected to the company sheet.');
+  return refreshHomepage_(t_('joined'));
 }
 
 function onSaveSignature(e) {
   var inputs = e.commonEventObject.formInputs || {};
   var text = inputs.signature ? inputs.signature.stringInputs.value[0] : '';
   PropertiesService.getUserProperties().setProperty('SIGNATURE', text.trim());
-  return notify_('Signature saved.');
+  return notify_(t_('signature_saved'));
 }
 
 function refreshHomepage_(message) {

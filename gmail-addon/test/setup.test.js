@@ -9,7 +9,7 @@ const vm = require('node:vm');
 
 const ctx = {};
 vm.createContext(ctx);
-for (const f of ['Config.gs', 'History.gs', 'Carriers.gs', 'Quotes.gs', 'Orders.gs', 'Brand.gs', 'Requests.gs', 'Setup.gs']) {
+for (const f of ['Config.gs', 'History.gs', 'Carriers.gs', 'Quotes.gs', 'Orders.gs', 'Brand.gs', 'Requests.gs', 'Setup.gs', 'I18n.gs']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctx);
 }
 const plain = (x) => JSON.parse(JSON.stringify(x));

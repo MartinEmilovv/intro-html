@@ -61,7 +61,7 @@ var DRAFT_SYSTEM =
 /** Sends one request to Claude and returns the text of the answer. */
 function callClaude_(system, userText, effort, schema) {
   var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set in Script Properties.');
+  if (!apiKey) throw new Error(t_('api_key_not_set'));
 
   var payload = {
     model: CLAUDE_MODEL,
@@ -90,10 +90,10 @@ function callClaude_(system, userText, effort, schema) {
   var body = JSON.parse(res.getContentText());
   if (status !== 200) {
     var msg = body.error && body.error.message ? body.error.message : res.getContentText();
-    throw new Error('Claude API error ' + status + ': ' + msg);
+    throw new Error(t_('claude_error', { status: status, message: msg }));
   }
-  if (body.stop_reason === 'refusal') throw new Error('Claude declined this request.');
-  if (body.stop_reason === 'max_tokens') throw new Error('Claude\'s answer was cut off. Try again.');
+  if (body.stop_reason === 'refusal') throw new Error(t_('claude_declined'));
+  if (body.stop_reason === 'max_tokens') throw new Error(t_('claude_cut_off'));
 
   return body.content
     .filter(function (b) { return b.type === 'text'; })
