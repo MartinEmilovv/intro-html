@@ -34,6 +34,21 @@ function getSettings_() {
   };
 }
 
+/**
+ * When an update adds permissions (e.g. Drive for the заявки), Gmail doesn't ask
+ * again by itself. This shows Google's "Authorize" prompt in the sidebar instead
+ * of letting an action fail with a permission error.
+ */
+function requireAuthorization_() {
+  var info = ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL);
+  if (info.getAuthorizationStatus() === ScriptApp.AuthorizationStatus.REQUIRED) {
+    CardService.newAuthorizationException()
+      .setAuthorizationUrl(info.getAuthorizationUrl())
+      .setResourceDisplayName(DEFAULT_ASSISTANT_NAME)
+      .throwException();
+  }
+}
+
 function getMessage_(e) {
   GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken);
   return GmailApp.getMessageById(e.gmail.messageId);
@@ -62,6 +77,7 @@ function field_(label, value) {
 
 /** Shown when the add-on is opened with no email selected. */
 function onHomepage() {
+  requireAuthorization_();
   var s = getSettings_();
   var hasKey = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   var section = CardService.newCardSection()
@@ -81,6 +97,7 @@ function onHomepage() {
  * straight away (no Claude call). Otherwise Claude is only called on the button.
  */
 function onGmailMessage(e) {
+  requireAuthorization_();
   var settings = getSettings_();
   try {
     var saved = loadAnalysis_(settings, e.gmail.messageId);
@@ -104,6 +121,7 @@ function onGmailMessage(e) {
 // ---- Actions ----------------------------------------------------------------
 
 function onAnalyze(e) {
+  requireAuthorization_();
   var settings = getSettings_();
   var message = getMessage_(e);
   var request;
@@ -266,6 +284,7 @@ function buildQuotesSection_(quotes, ranked, carriersTab) {
 }
 
 function onSaveQuote(e) {
+  requireAuthorization_();
   var inputs = e.commonEventObject.formInputs || {};
   var carrier = inputs.quote_carrier ? inputs.quote_carrier.stringInputs.value[0] : '';
   var price = parsePrice_(inputs.quote_price ? inputs.quote_price.stringInputs.value[0] : '');
@@ -304,6 +323,7 @@ function parseSender_(from) {
 }
 
 function onOrderConfirmed(e) {
+  requireAuthorization_();
   var settings = getSettings_();
   if (!settings.historySheetId) return notify_('Connect a price history sheet first.');
   var request, message, carriersTab, quotes, ranked;
@@ -358,6 +378,7 @@ function onOrderConfirmed(e) {
 }
 
 function onCreateOrders(e) {
+  requireAuthorization_();
   var inputs = e.commonEventObject.formInputs || {};
   var get = function (name) { return inputs[name] ? inputs[name].stringInputs.value[0].trim() : ''; };
   var sell = parsePrice_(get('order_sell'));
@@ -463,6 +484,7 @@ function buildCarriersSection_(carriers, settings) {
 
 /** Creates one price request draft per ticked carrier. Never sends. */
 function onDraftCarrierRequests(e) {
+  requireAuthorization_();
   var inputs = e.commonEventObject.formInputs || {};
   var picked = inputs.carriers ? inputs.carriers.stringInputs.value : [];
   if (picked.length === 0) return notify_('Tick at least one carrier.');
@@ -498,6 +520,7 @@ function onDraftCarrierRequests(e) {
 
 /** Writes the offer with Claude and opens it as a reply draft. Never sends. */
 function onCreateDraft(e) {
+  requireAuthorization_();
   var inputs = e.commonEventObject.formInputs || {};
   var price = inputs.price ? inputs.price.stringInputs.value[0].trim() : '';
   if (!/^\d+([.,]\d+)?$/.test(price)) {
