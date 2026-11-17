@@ -167,6 +167,11 @@ Built so far in the Gmail add-on:
   list (hosting, Anthropic), privacy policy, export anytime, deletion within 30 days of
   cancelling, breach notification within 72 hours. Check Anthropic's current API terms
   on training and data retention before promising anything to clients.
+- [ ] Narrow the add-on's Google permissions: Drive access only to files the add-on
+  created or the user picks (drive.file) instead of the whole Drive; review the
+  Gmail and Sheets scopes the same way.
+- [ ] Google Workspace Marketplace listing: OAuth verification, and the outside security
+  assessment Google requires for broad Gmail/Drive access (budget time and cost).
 - [ ] Later: ISO 27001 when bigger clients ask for it.
 - [ ] Set a monthly spending limit in console.anthropic.com.
 - [ ] Measure real Claude cost per forwarder per month to set the subscription price.
