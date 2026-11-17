@@ -157,6 +157,10 @@ Built so far in the Gmail add-on:
   only the server calls Claude. Never ship the key inside a client's copy of the script.
   The server also tracks usage per client, enforces limits and can switch a client off.
   (Same server as the IMAP mailbox connection.)
+- [ ] Move client data (price history, carriers, orders) from Google Sheets into our own
+  database on the same server, shared by Gmail, Outlook and IMAP clients. Host in the EU,
+  sign a data processing agreement (GDPR) with each client, back it up, and offer an
+  Excel export. Pilots can stay on Google Sheets (or Excel in OneDrive for Outlook users).
 - [ ] Set a monthly spending limit in console.anthropic.com.
 - [ ] Measure real Claude cost per forwarder per month to set the subscription price.
 
