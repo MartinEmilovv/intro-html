@@ -263,9 +263,19 @@ function createTemplate_(name, lines, folder) {
   var body = doc.getBody();
   body.clear();
   lines.forEach(function (line, i) {
-    var para = i === 0 ? body.getParagraphs()[0].setText(line[1]) : body.appendParagraph(line[1]);
-    if (line[0] === 'title') para.setHeading(DocumentApp.ParagraphHeading.HEADING1)
-      .setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    var para;
+    if (i === 0) {
+      // A new document starts with one empty paragraph: use it for the first line.
+      // (Paragraph.setText returns nothing, so keep the paragraph itself.)
+      para = body.getParagraphs()[0];
+      para.setText(line[1]);
+    } else {
+      para = body.appendParagraph(line[1]);
+    }
+    if (line[0] === 'title') {
+      para.setHeading(DocumentApp.ParagraphHeading.HEADING1);
+      para.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    }
   });
   doc.saveAndClose();
   var file = DriveApp.getFileById(doc.getId());
@@ -319,6 +329,8 @@ function appendToHistory_(ss, order) {
 function createOrderDocuments_(order, message, settings) {
   var ss = SpreadsheetApp.openById(settings.historySheetId);
   var templates = ensureTemplates_(ss);
+  // Only now take a number, so a template problem never uses one up.
+  order.number = nextOrderNumber_(ss);
   var folder = getOrCreateFolder_(getOrCreateFolder_(companyFolder_(ss), TRANSPORTS_FOLDER), orderFolderName_(order));
 
   var clientPdf = fillTemplate_(templates.client, buildOrderFields_(order, 'client', settings),

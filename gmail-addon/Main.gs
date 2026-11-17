@@ -401,7 +401,7 @@ function onCreateOrders(e) {
     }
     var sender = parseSender_(message.getFrom());
     var order = {
-      number: nextOrderNumber_(SpreadsheetApp.openById(settings.historySheetId)),
+      number: '', // given out in createOrderDocuments_, once the templates are ready
       date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd.MM.yyyy'),
       language: request.language,
       client_name: get('order_client'),
