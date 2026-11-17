@@ -150,6 +150,15 @@ Built so far in the Gmail add-on:
   pre-filled, or open chat + copy text), depending on the Viber test.
 - [ ] Save the carrier's email thread to the transport folder too.
 
+**Before the second client (multi-company)**
+- [ ] Per-company settings: template IDs, order number counter and sheet ID are in Script
+  Properties, which every user of a published add-on shares. Move them to per-company
+  storage (per user now, our database later), so order numbers and templates never mix.
+- [ ] First-run setup: create the price history sheet (History, Carriers, Quotes tabs) and
+  the templates in the new company's own Drive, instead of the built-in sheet ID.
+- [ ] Several forwarders in one company share one sheet, one order counter and the same
+  templates (through normal Google sharing).
+
 **Before selling to clients**
 - [ ] Move the Anthropic API key to a small server of ours: the add-on calls our server,
   only the server calls Claude. Never ship the key inside a client's copy of the script.
