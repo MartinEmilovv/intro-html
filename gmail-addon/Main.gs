@@ -473,6 +473,8 @@ function onDraftCarrierRequests(e) {
   } catch (err) {
     return notify_(err.message);
   }
+  // Gmail only lets an add-on create drafts after it presents the open email's token.
+  GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken);
 
   var settings = getSettings_();
   var history = readHistory_(settings.historySheetId);
