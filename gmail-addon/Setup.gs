@@ -22,6 +22,9 @@ var SETTINGS_HEADER = ['setting', 'value', 'what it is'];
 function companySettingDefs_() {
   return [
     ['COMPANY_NAME', '', 'Your company name, as it appears on the заявки'],
+    ['ASSISTANT_NAME', '', 'Name shown at the top of the sidebar, e.g. "Orbit Assistant" (empty = Freight Assistant)'],
+    ['LOGO_URL', '', 'Link to your logo image (https, PNG or JPG), shown at the top of the sidebar'],
+    ['BRAND_COLOR', '', 'Color of the main buttons, e.g. #1d5b86'],
     ['OFFER_TERMS', CONFIG.OFFER_TERMS, 'Terms added to price offers'],
     ['CLIENT_PAYMENT_TERMS', CONFIG.CLIENT_PAYMENT_TERMS, 'Payment terms on the client заявка'],
     ['CARRIER_PAYMENT_TERMS', CONFIG.CARRIER_PAYMENT_TERMS, 'Payment terms on the carrier заявка'],
@@ -189,13 +192,12 @@ function migrateLegacySettings_(ss) {
 
 // ---- Setup cards and actions ---------------------------------------------------
 
-function buildSetupSection_() {
+function buildSetupSection_(settings) {
   return CardService.newCardSection().setHeader('Set up your company')
     .addWidget(CardService.newTextParagraph().setText(
       'Freight Assistant keeps your price history, carriers, quotes and settings in a Google ' +
       'Sheet in <b>your own</b> Google Drive.'))
-    .addWidget(CardService.newTextButton()
-      .setText('Create company workspace')
+    .addWidget(primaryButton_('Create company workspace', settings)
       .setOnClickAction(CardService.newAction().setFunctionName('onCreateWorkspace')))
     .addWidget(CardService.newTextParagraph().setText(
       'Or, if a colleague already set it up, paste the link of the company sheet they shared with you:'))
@@ -208,12 +210,13 @@ function buildSetupSection_() {
 function buildWorkspaceSection_(settings) {
   var url = 'https://docs.google.com/spreadsheets/d/' + settings.historySheetId + '/edit';
   return CardService.newCardSection().setHeader('Your company')
-    .addWidget(field_('Company', settings.companyName || 'Not set: add it on the Settings tab'))
+    .addWidget(iconField_('STORE', 'Company', settings.companyName || 'Not set: add it on the Settings tab'))
     .addWidget(CardService.newTextButton()
       .setText('Open company sheet')
       .setOpenLink(CardService.newOpenLink().setUrl(url)))
     .addWidget(CardService.newTextParagraph().setText(
-      'Company name, payment terms and offer terms are on the sheet\'s <b>Settings</b> tab. ' +
+      'Company name, terms, and your assistant\'s name, logo and color are on the sheet\'s ' +
+      '<b>Settings</b> tab. ' +
       'To add colleagues, share the "Freight Assistant" folder with them, then they paste the ' +
       'sheet link here.'))
     .addWidget(CardService.newTextInput()

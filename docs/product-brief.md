@@ -134,6 +134,8 @@ Built so far in the Gmail add-on:
   Company settings and the order counter live on its Settings tab, signatures per
   user; colleagues join by sharing the folder and pasting the sheet link. Only the
   API key is shared (Script Properties).
+- Branding per company (Settings tab): assistant name (e.g. "Orbit Assistant"), logo
+  and button color in the sidebar; icons, colored main buttons, collapsible history.
 
 ## To-do
 
@@ -199,6 +201,8 @@ Built so far in the Gmail add-on:
 - [ ] Mailbox-level (IMAP) connection for clients not on Gmail/Outlook, saving drafts
   into any mailbox.
 - [ ] Outlook add-in.
+- [ ] White-label copy of the add-on per big customer, if they want their own name and
+  icon in Gmail's side panel too (not just inside the sidebar).
 - [ ] Create the transport file in the TMS with documents attached, depending on what
   each TMS allows: API (best), file import, browser extension filling the form.
   Avoid automating desktop-only TMS programs.

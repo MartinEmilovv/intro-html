@@ -33,6 +33,7 @@ the draft opens in Gmail for you to check and send.
 | `History.gs` | Reads the price history sheet and finds similar transports (plain code, no AI) |
 | `Config.gs` | Defaults and fixed texts shared by every company (acknowledgment and order email texts, starting terms) |
 | `Setup.gs` | Company workspace: each company's own sheet, settings, templates and order counter |
+| `Brand.gs` | Each company's assistant name, logo and button color in the sidebar |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
 | `Quotes.gs` | Records carrier quotes on a Quotes tab |
@@ -108,8 +109,24 @@ your email signature in the sidebar. To start with sample data, import
 | `language` | bg | `bg` or `en`: the language of emails to them (empty = bg) |
 
 **Settings tab**: `COMPANY_NAME`, `OFFER_TERMS`, `CLIENT_PAYMENT_TERMS`,
-`CARRIER_PAYMENT_TERMS`; and, filled in automatically, the template IDs and the order
-counter (`NEXT_ORDER_NUMBER`, `ORDER_NUMBER_YEAR`).
+`CARRIER_PAYMENT_TERMS`; branding (`ASSISTANT_NAME`, `LOGO_URL`, `BRAND_COLOR`); and,
+filled in automatically, the template IDs and the order counter (`NEXT_ORDER_NUMBER`,
+`ORDER_NUMBER_YEAR`).
+
+### Branding
+
+Each company can make the sidebar its own, on its Settings tab:
+
+- `ASSISTANT_NAME`: the title at the top of every card, e.g. "Orbit Assistant"
+  (empty = Freight Assistant).
+- `LOGO_URL`: a public `https` link to a PNG or JPG logo, shown next to the title. A
+  logo file on the company's own website works well.
+- `BRAND_COLOR`: the color of the main buttons, e.g. `#1d5b86`.
+
+Invalid values fall back to the defaults. The small icon and name in Gmail's side
+panel come from `appsscript.json` and are the same for every company using one
+deployment; a company that wants those too needs its own copy of the add-on. Only
+use a company's name and logo with its permission.
 
 ### Several companies, several colleagues
 
