@@ -159,6 +159,15 @@ Built so far in the Gmail add-on:
   database on the same server, shared by Gmail, Outlook and IMAP clients. Host in the EU,
   sign a data processing agreement (GDPR) with each client, back it up, and offer an
   Excel export. Pilots can stay on Google Sheets (or Excel in OneDrive for Outlook users).
+- [ ] Data security for the database: each client's data fully separated (AI uses only
+  their own history); EU hosting; encrypted at rest and in transit; encrypted daily
+  backups with tested restores; 2FA for users; staff access limited and logged; store
+  only the pricing memory, not whole mailboxes.
+- [ ] Contracts: GDPR data processing agreement (lawyer-checked template), subprocessor
+  list (hosting, Anthropic), privacy policy, export anytime, deletion within 30 days of
+  cancelling, breach notification within 72 hours. Check Anthropic's current API terms
+  on training and data retention before promising anything to clients.
+- [ ] Later: ISO 27001 when bigger clients ask for it.
 - [ ] Set a monthly spending limit in console.anthropic.com.
 - [ ] Measure real Claude cost per forwarder per month to set the subscription price.
 
