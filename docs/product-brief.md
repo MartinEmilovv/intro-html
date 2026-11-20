@@ -141,6 +141,12 @@ Built so far in the Gmail add-on:
   Claude call.
 - Sidebar in English or Bulgarian, switched per person with one button (follows the
   Google account language at first).
+- More request details (trucks, loading time, consignee, customs, requirements), the
+  date rule, multi-truck prices, cargo exclusions / weight assumption settings.
+- Template converter (own Word/Docs заявки -> fillable templates) and an order form that
+  adapts to each template's fields.
+- Carrier and client email conversations saved in the transport folder, with an
+  "Update transport folder" button.
 
 ## To-do
 
@@ -163,20 +169,9 @@ Built so far in the Gmail add-on:
 **Next to build**
 - [ ] "Send via Viber" button per carrier (Viber Desktop link with the request
   pre-filled, or open chat + copy text), depending on the Viber test.
-- [ ] Save the carrier's email thread (price request, quote, confirmation, signed заявка)
-  to the transport folder as a PDF, plus an "Update transport folder" button for
-  documents that arrive later.
 
-**Client templates (each client brings their own заявки)**
-- [ ] Template converter for onboarding: client's Word/.doc template -> Google Doc (layout,
-  logo and legal text kept), with Claude replacing the blanks ("Дата и час на товарене:
-  ……") by field markers like `{{loading_date}}`; reviewed once by us or the client.
-- [ ] Template-driven order form: read which fields the client's template uses; fill what
-  we can, and show the rest (e.g. customs points) as boxes in the order form.
-- [ ] Extract more from request emails when mentioned: number of trucks, loading time,
-  consignee (CMR), customs points, special requirements. Used in: the offer (restate,
-  ask for what's missing), carrier price requests, the заявки fields, and the price
-  suggestion (truck count, customs routes).
+**Client templates (each client brings their own заявки)** — converter and adaptive order
+form are built; test them with a real client's templates.
 - Reference: a real client -> forwarder заявка ("заявка договор": shipper/forwarder header,
   points 1–11 incl. consignee per CMR and customs, demurrage/cancellation terms,
   both signatures). Our starter templates are only a fallback.

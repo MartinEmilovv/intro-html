@@ -28,6 +28,9 @@ function companySettingDefs_() {
     ['OFFER_TERMS', CONFIG.OFFER_TERMS, 'Terms added to price offers'],
     ['CLIENT_PAYMENT_TERMS', CONFIG.CLIENT_PAYMENT_TERMS, 'Payment terms on the client заявка'],
     ['CARRIER_PAYMENT_TERMS', CONFIG.CARRIER_PAYMENT_TERMS, 'Payment terms on the carrier заявка'],
+    ['CARGO_EXCLUSIONS', '', 'Sentence added to offers when the cargo type is missing, e.g. "Цената не включва ADR, ' +
+      'температурен режим и извънгабаритни товари."'],
+    ['WEIGHT_ASSUMPTION', '', 'Weight assumed when the email gives none, stated in the offer, e.g. "до 1 000 кг на палет"'],
     ['CLIENT_TEMPLATE_ID', '', 'Google Doc used for client заявки (filled in automatically)'],
     ['CARRIER_TEMPLATE_ID', '', 'Google Doc used for carrier заявки (filled in automatically)'],
     ['NEXT_ORDER_NUMBER', '1', 'Next running order number (filled in automatically)'],
@@ -213,7 +216,9 @@ var EDITABLE_COMPANY_SETTINGS = [
   ['BRAND_COLOR', 'brandColor'],
   ['OFFER_TERMS', 'offerTerms'],
   ['CLIENT_PAYMENT_TERMS', 'clientPaymentTerms'],
-  ['CARRIER_PAYMENT_TERMS', 'carrierPaymentTerms']
+  ['CARRIER_PAYMENT_TERMS', 'carrierPaymentTerms'],
+  ['CARGO_EXCLUSIONS', 'cargoExclusions'],
+  ['WEIGHT_ASSUMPTION', 'weightAssumption']
 ];
 
 /**

@@ -18,7 +18,10 @@
  * Placeholders: {{order_number}} {{date}} {{company}} {{client}} {{carrier}}
  * {{carrier_contact}} {{truck_plates}} {{loading_place}} {{loading_date}}
  * {{unloading_place}} {{delivery_date}} {{cargo}} {{pallets}} {{weight}}
- * {{truck_type}} {{price}} {{payment_terms}}
+ * {{truck_type}} {{price}} {{payment_terms}} {{truck_count}} {{loading_time}}
+ * {{consignee}} {{customs_points}} {{special_requirements}}
+ * Any other {{name}} in a company's own template is asked in the order form and
+ * filled in on both documents (see templateFieldPlan_).
  * The client's document never gets the carrier or the carrier price, and the
  * carrier's never gets the client or the selling price (see buildOrderFields_).
  */
@@ -63,7 +66,12 @@ function buildOrderFields_(order, side, settings) {
     pallets: order.pallets != null ? String(order.pallets) : '',
     weight: order.weight_kg != null ? order.weight_kg + ' кг' : '',
     truck_type: TRUCK_LABELS_BG[order.truck_type] != null ? TRUCK_LABELS_BG[order.truck_type] : (order.truck_type || ''),
-    truck_plates: order.plates || ''
+    truck_plates: order.plates || '',
+    truck_count: order.truck_count != null ? String(order.truck_count) : '',
+    loading_time: order.loading_time || '',
+    consignee: order.consignee || '',
+    customs_points: order.customs_points || '',
+    special_requirements: order.special_requirements || ''
   };
   if (side === 'client') {
     fields.client = order.client_name;
@@ -77,7 +85,46 @@ function buildOrderFields_(order, side, settings) {
   } else {
     throw new Error('Unknown side: ' + side);
   }
+  // Values typed in the order form for fields of the company's own template. They
+  // never replace a party, price or terms field, so sides can't be mixed up.
+  var extra = order.template_values || {};
+  Object.keys(extra).forEach(function (key) {
+    if (PROTECTED_FIELDS.indexOf(key) === -1) fields[key] = String(extra[key]);
+  });
   return fields;
+}
+
+/** Fields only the add-on fills, per side; never taken from the order form's extra boxes. */
+var PROTECTED_FIELDS = ['order_number', 'date', 'company', 'client', 'carrier', 'carrier_contact',
+  'price', 'payment_terms'];
+/** Fields the add-on always fills itself. */
+var AUTO_FIELDS = PROTECTED_FIELDS.concat(['loading_place', 'loading_date', 'unloading_place',
+  'delivery_date', 'cargo', 'pallets', 'weight', 'truck_type', 'truck_plates']);
+/** Fields read from the email, shown in the order form to check and complete. */
+var ASK_FIELDS = ['truck_count', 'loading_time', 'consignee', 'customs_points', 'special_requirements'];
+
+/** All {{field}} names in a text, in order, each once. */
+function placeholdersIn_(text) {
+  var seen = {}, out = [];
+  (String(text).match(/\{\{([a-z_]+)\}\}/g) || []).forEach(function (m) {
+    var name = m.slice(2, -2);
+    if (!seen[name]) { seen[name] = true; out.push(name); }
+  });
+  return out;
+}
+
+/**
+ * Which order form boxes a company's templates need: the details we read from the
+ * email (pre-filled, to check) and any field of their own we don't know (empty).
+ */
+function templateFieldPlan_(placeholders, request) {
+  return placeholders
+    .filter(function (name) { return AUTO_FIELDS.indexOf(name) === -1; })
+    .map(function (name) {
+      var known = ASK_FIELDS.indexOf(name) !== -1;
+      var value = known && request[name] != null ? String(request[name]) : '';
+      return { name: name, value: value, known: known };
+    });
 }
 
 /** A History tab row for the confirmed order, in the tab's own column order. */
@@ -226,7 +273,11 @@ var CLIENT_TEMPLATE_LINES = [
   ['text', 'Срок за доставка: {{delivery_date}}'],
   ['text', 'Стока: {{cargo}}'],
   ['text', 'Палети: {{pallets}}   Тегло: {{weight}}'],
-  ['text', 'Вид на камиона: {{truck_type}}   Рег. номер: {{truck_plates}}'],
+  ['text', 'Брой и вид на камионите: {{truck_count}} × {{truck_type}}   Рег. номер: {{truck_plates}}'],
+  ['text', 'Час на товарене: {{loading_time}}'],
+  ['text', 'Получател по ЧМР: {{consignee}}'],
+  ['text', 'Митници: {{customs_points}}'],
+  ['text', 'Допълнителни изисквания: {{special_requirements}}'],
   ['text', ''],
   ['text', 'Навло: {{price}}, без ДДС'],
   ['text', 'Плащане: {{payment_terms}}'],
@@ -249,7 +300,11 @@ var CARRIER_TEMPLATE_LINES = [
   ['text', 'Срок за доставка: {{delivery_date}}'],
   ['text', 'Стока: {{cargo}}'],
   ['text', 'Палети: {{pallets}}   Тегло: {{weight}}'],
-  ['text', 'Вид на камиона: {{truck_type}}'],
+  ['text', 'Брой и вид на камионите: {{truck_count}} × {{truck_type}}'],
+  ['text', 'Час на товарене: {{loading_time}}'],
+  ['text', 'Получател по ЧМР: {{consignee}}'],
+  ['text', 'Митници: {{customs_points}}'],
+  ['text', 'Допълнителни изисквания: {{special_requirements}}'],
   ['text', ''],
   ['text', 'Навло: {{price}}, без ДДС'],
   ['text', 'Условия: превозът се извършва по Конвенция CMR. Плащане: {{payment_terms}}.'],
@@ -305,10 +360,10 @@ function escapeHtml_(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** The client's email thread as a PDF. */
+/** An email conversation as a PDF (sent and received messages; unsent drafts left out). */
 function threadPdf_(thread, name) {
   var html = '<h2>' + escapeHtml_(thread.getFirstMessageSubject()) + '</h2>' +
-    thread.getMessages().map(function (m) {
+    thread.getMessages().filter(function (m) { return !m.isDraft(); }).map(function (m) {
       return '<hr><p><b>' + escapeHtml_(m.getFrom()) + '</b><br>' + escapeHtml_(m.getDate()) + '</p>' +
         '<pre style="white-space:pre-wrap;font-family:sans-serif">' + escapeHtml_(m.getPlainBody()) + '</pre>';
     }).join('');
@@ -337,7 +392,6 @@ function createOrderDocuments_(order, message, settings) {
   var carrierPdf = fillTemplate_(templates.carrier, buildOrderFields_(order, 'carrier', settings),
     'Заявка ' + order.number + ' – превозвач', folder);
 
-  folder.createFile(threadPdf_(message.getThread(), 'Кореспонденция клиент ' + order.number));
   folder.createFile('Order summary ' + order.number + '.txt', orderSummaryText_(order));
 
   message.createDraftReply(buildClientOrderEmail_(order, settings.signature), { attachments: [clientPdf] });
@@ -345,5 +399,63 @@ function createOrderDocuments_(order, message, settings) {
   GmailApp.createDraft(order.carrier_email, carrierEmail.subject, carrierEmail.body, { attachments: [carrierPdf] });
 
   appendToHistory_(ss, order);
+  saveOrderThreads_(order, message, folder);
   return folder;
+}
+
+// ---- Email conversations in the transport folder -----------------------------
+
+/**
+ * Carrier conversations that belong to this order: the subject has the order
+ * number, or the conversation started after the client's request arrived (the
+ * price request, the quote, the confirmation). `threads` are {id, subject, startedAt}.
+ */
+function pickCarrierThreads_(threads, order) {
+  var since = Number(order.request_date) - 24 * 60 * 60 * 1000;
+  return threads.filter(function (t) {
+    return (order.number && String(t.subject).indexOf(order.number) !== -1) || t.startedAt >= since;
+  });
+}
+
+/** Saves or replaces a file of the same name, so updating never makes duplicates. */
+function upsertFile_(folder, blob) {
+  var existing = folder.getFilesByName(blob.getName());
+  if (existing.hasNext()) {
+    Drive.Files.update({}, existing.next().getId(), blob);
+  } else {
+    folder.createFile(blob);
+  }
+}
+
+/**
+ * The client's conversation and the carrier's conversations about this order, as
+ * PDFs in the transport folder. Returns how many conversations were saved.
+ * `order` needs number, carrier_email and request_date.
+ */
+function saveOrderThreads_(order, message, folder) {
+  upsertFile_(folder, threadPdf_(message.getThread(), 'Кореспонденция клиент ' + order.number));
+  var found = GmailApp.search('(from:' + order.carrier_email + ' OR to:' + order.carrier_email + ') newer_than:60d', 0, 20)
+    .map(function (thread) {
+      return { thread: thread, id: thread.getId(), subject: thread.getFirstMessageSubject(),
+        startedAt: thread.getMessages()[0].getDate().getTime() };
+    });
+  var picked = pickCarrierThreads_(found, order)
+    .sort(function (a, b) { return a.startedAt - b.startedAt; });
+  picked.forEach(function (t, i) {
+    upsertFile_(folder, threadPdf_(t.thread,
+      'Кореспонденция превозвач ' + order.number + (picked.length > 1 ? ' (' + (i + 1) + ')' : '')));
+  });
+  return 1 + picked.length;
+}
+
+/** The {{field}} names used in the company's two templates (body, header, footer). */
+function templatePlaceholders_(templateIds) {
+  var text = '';
+  templateIds.forEach(function (id) {
+    var doc = DocumentApp.openById(id);
+    [doc.getBody(), doc.getHeader(), doc.getFooter()].forEach(function (section) {
+      if (section) text += '\n' + section.getText();
+    });
+  });
+  return placeholdersIn_(text);
 }

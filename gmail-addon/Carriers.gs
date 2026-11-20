@@ -29,8 +29,9 @@ var CARRIER_REQUEST_SCHEMA = {
 var CARRIER_REQUEST_SYSTEM =
   'You write price requests from a road freight forwarding company in Bulgaria to a carrier. ' +
   'Write in the language given. Be brief and businesslike, as an experienced forwarder would. ' +
-  'List the loading place and date, unloading place and delivery date, cargo, pallets, weight ' +
-  'and truck type, then ask for their price and whether they have a truck available. ' +
+  'List the loading place, date and time, unloading place and delivery date, cargo, pallets, ' +
+  'weight, truck type and number of trucks, customs points and special requirements, then ask ' +
+  'for their price and whether they have a truck available. ' +
   'Leave out any detail that is not given; never invent details. ' +
   'The subject is short: the route and the loading date. ' +
   'The body starts right after the greeting line (do not write a greeting or a name) and ends ' +
@@ -79,7 +80,10 @@ function rankCarriers_(request, history, carriers) {
   });
 }
 
-/** Only the load details a carrier needs to quote. Nothing about the client or our price. */
+/**
+ * Only the load details a carrier needs to quote. Nothing about the client, the
+ * consignee (the client's customer) or our price.
+ */
 function carrierLoad_(request) {
   return {
     from_city: request.from_city,
@@ -91,7 +95,11 @@ function carrierLoad_(request) {
     cargo: request.cargo,
     pallets: request.pallets,
     weight_kg: request.weight_kg,
-    truck_type: request.truck_type
+    truck_type: request.truck_type,
+    truck_count: request.truck_count,
+    loading_time: request.loading_time,
+    customs_points: request.customs_points,
+    special_requirements: request.special_requirements
   };
 }
 

@@ -36,6 +36,7 @@ the draft opens in Gmail for you to check and send.
 | `Brand.gs` | Each company's assistant name, logo and button color in the sidebar |
 | `Requests.gs` | Saves each analysis (Requests tab), so reopening an email shows it again |
 | `I18n.gs` | Every sidebar text in English and Bulgarian, and the language button |
+| `Templates.gs` | Converts a company's own Word/Docs заявка into a fillable template |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
 | `Quotes.gs` | Records carrier quotes on a Quotes tab |
@@ -213,6 +214,47 @@ The request is written only from the load: route (cities and countries), dates,
 cargo, pallets, weight and truck type. Your selling price, your client's name and
 the exact addresses are never passed to Claude for this, so they can't end up in a
 carrier email.
+
+## Request details and missing information
+
+Besides route, dates, cargo and truck, Claude reads the **number of trucks**, **loading
+time**, **consignee (CMR)**, **customs points** and **special requirements** when the
+email mentions them. They're shown in the sidebar and used in the offer (restated for
+the client to confirm), in carrier price requests (all except the consignee, who is the
+client's customer), in the заявки, and in the price: the suggestion is per truck, so 2
+trucks show the total for both.
+
+**Dates without a year** get the current year, or next year if that date has already
+passed (a "05.01" request in December is for January). A delivery date without a year
+is placed on or after the loading date.
+
+**When the client leaves things out**, two company settings go into the offer:
+`CARGO_EXCLUSIONS` (a sentence used when the cargo type is missing) and
+`WEIGHT_ASSUMPTION` (the weight the price assumes when none is given). Both are empty
+until set under Company settings.
+
+## Your own заявка templates
+
+Under **Transport order templates** on the start screen: put the company's own заявка
+(Word .doc/.docx or a Google Doc) in Google Drive, paste its link, choose **Clients** or
+**Carriers**, and **Import template**. The add-on copies it into the company's Freight
+Assistant folder as a Google Doc (layout, logo and legal text kept; the original isn't
+changed), Claude finds the blanks ("Дата и час на товарене: ……") and they're replaced
+with field markers (`{{loading_date}} {{loading_time}}`). You get a list of what was
+placed and what to add by hand, and the Doc becomes the company's template.
+
+Blanks that need a field the add-on doesn't know (say, an ADR class) get a new marker,
+and the **order form** then shows a box for it. The order form always shows boxes for
+the template's fields the add-on reads from the email (consignee, customs, ...) so you
+can check them. Values typed there never change a price, a party or the payment terms.
+
+## Transport folder
+
+Each order's folder holds both заявки, an order summary, and the email conversations
+with the client and the carrier as PDFs (carrier conversations that started after the
+client's request, or that mention the order number). Reopen the request email and click
+**Update transport folder** when signed заявки or new emails arrive; files are updated
+in place, not duplicated.
 
 ## Language
 

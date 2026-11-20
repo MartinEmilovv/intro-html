@@ -78,3 +78,13 @@ function suggestPrice_(similar) {
   var carrier = avg('carrier_eur');
   return { sell: sell, carrier: carrier, margin: sell - carrier, basedOn: similar.length };
 }
+
+/** The suggestion is per truck; for several trucks the whole order is n times that. */
+function scaleSuggestion_(suggestion, truckCount) {
+  var n = Number(truckCount);
+  if (!suggestion || !(n > 1)) return suggestion;
+  return {
+    sell: suggestion.sell * n, carrier: suggestion.carrier * n, margin: suggestion.margin * n,
+    basedOn: suggestion.basedOn, trucks: n
+  };
+}

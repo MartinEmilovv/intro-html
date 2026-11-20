@@ -69,6 +69,14 @@ var UI_TEXT = {
   set_OFFER_TERMS: { en: 'Offer terms', bg: 'Условия в офертите' },
   set_CLIENT_PAYMENT_TERMS: { en: 'Payment terms for clients', bg: 'Условия за плащане за клиенти' },
   set_CARRIER_PAYMENT_TERMS: { en: 'Payment terms for carriers', bg: 'Условия за плащане за превозвачи' },
+  set_CARGO_EXCLUSIONS: {
+    en: 'If the cargo type is missing, add to offers',
+    bg: 'Ако видът на товара липсва, добави към офертите'
+  },
+  set_WEIGHT_ASSUMPTION: {
+    en: 'If the weight is missing, assume (e.g. up to 1,000 kg per pallet)',
+    bg: 'Ако теглото липсва, приеми (напр. до 1 000 кг на палет)'
+  },
   save_company: { en: 'Save company settings', bg: 'Запази настройките на фирмата' },
   company_note: {
     en: 'These apply to everyone at your company. To add colleagues, share the "Freight Assistant" ' +
@@ -254,6 +262,71 @@ var UI_TEXT = {
     bg: 'Шаблонът за заявка на фирмата не може да бъде отворен. Помолете колегата, който е ' +
       'настроил асистента, да сподели с вас папката „Freight Assistant“.'
   },
+
+  // Extra request details (also order form box labels)
+  field_truck_count: { en: 'Number of trucks', bg: 'Брой камиони' },
+  field_loading_time: { en: 'Loading time', bg: 'Час на товарене' },
+  field_consignee: { en: 'Consignee (CMR)', bg: 'Получател по ЧМР' },
+  field_customs_points: { en: 'Customs points', bg: 'Митници' },
+  field_special_requirements: { en: 'Special requirements', bg: 'Допълнителни изисквания' },
+  for_trucks: { en: 'Total for {n} trucks.', bg: 'Общо за {n} камиона.' },
+
+  // Transport folder
+  order_created: {
+    en: 'Order <b>{number}</b> was created. When signed orders or new emails arrive, update the folder.',
+    bg: 'Поръчка <b>{number}</b> е създадена. Когато пристигнат подписани заявки или нови имейли, ' +
+      'обновете папката.'
+  },
+  update_folder: { en: 'Update transport folder', bg: 'Обнови папката на превоза' },
+  update_folder_hint: {
+    en: 'When the signed orders arrive, reopen this email and click Update transport folder.',
+    bg: 'Когато пристигнат подписаните заявки, отворете отново този имейл и натиснете ' +
+      '„Обнови папката на превоза“.'
+  },
+  folder_updated: {
+    en: 'Transport folder updated: {n} email conversation(s) saved.',
+    bg: 'Папката на превоза е обновена: запазени разговори: {n}.'
+  },
+
+  // Template converter
+  templates_header: { en: 'Transport order templates', bg: 'Шаблони за заявки' },
+  templates_intro: {
+    en: 'Use your own заявки: put your Word or Google Docs template in Google Drive, paste its ' +
+      'link and import it. The original file stays as it is.',
+    bg: 'Използвайте вашите собствени заявки: качете шаблона си (Word или Google Docs) в Google ' +
+      'Drive, поставете връзката и го импортирайте. Оригиналният файл не се променя.'
+  },
+  open_client_template: { en: 'Client template', bg: 'Шаблон за клиенти' },
+  open_carrier_template: { en: 'Carrier template', bg: 'Шаблон за превозвачи' },
+  template_link: { en: 'Link to the template in Google Drive', bg: 'Връзка към шаблона в Google Drive' },
+  template_side: { en: 'Template for', bg: 'Шаблон за' },
+  side_client: { en: 'Clients', bg: 'Клиенти' },
+  side_carrier: { en: 'Carriers', bg: 'Превозвачи' },
+  import_template: { en: 'Import template', bg: 'Импортирай шаблона' },
+  bad_drive_link: {
+    en: 'Paste the link of a file in your Google Drive.',
+    bg: 'Поставете връзката към файл във вашия Google Drive.'
+  },
+  import_failed: { en: 'Could not import the template: {error}', bg: 'Шаблонът не можа да бъде импортиран: {error}' },
+  import_done_client: {
+    en: 'Your template is now used for client orders.',
+    bg: 'Шаблонът ви вече се използва за заявките към клиенти.'
+  },
+  import_done_carrier: {
+    en: 'Your template is now used for carrier orders.',
+    bg: 'Шаблонът ви вече се използва за заявките към превозвачи.'
+  },
+  import_found: { en: 'Filled in automatically:', bg: 'Попълват се автоматично:' },
+  import_missed: {
+    en: 'Not placed (add these markers in the template by hand):',
+    bg: 'Не са поставени (добавете тези маркери в шаблона ръчно):'
+  },
+  import_check: {
+    en: 'Open the template and check the {{field}} markers once. You can edit it like any Google Doc.',
+    bg: 'Отворете шаблона и проверете веднъж маркерите {{field}}. Можете да го редактирате като ' +
+      'всеки Google Doc.'
+  },
+  open_template: { en: 'Open the template', bg: 'Отвори шаблона' },
 
   // Claude
   api_key_not_set: {

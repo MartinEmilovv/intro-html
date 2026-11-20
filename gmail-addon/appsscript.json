@@ -15,6 +15,11 @@
     "https://www.googleapis.com/auth/documents"
   ],
   "urlFetchWhitelist": ["https://api.anthropic.com/"],
+  "dependencies": {
+    "enabledAdvancedServices": [
+      { "userSymbol": "Drive", "serviceId": "drive", "version": "v3" }
+    ]
+  },
   "addOns": {
     "common": {
       "name": "Freight Assistant",

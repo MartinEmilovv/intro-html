@@ -30,7 +30,11 @@ function getSettings_() {
     logoUrl: get('LOGO_URL'),
     brandColor: get('BRAND_COLOR'),
     clientPaymentTerms: get('CLIENT_PAYMENT_TERMS'),
-    carrierPaymentTerms: get('CARRIER_PAYMENT_TERMS')
+    carrierPaymentTerms: get('CARRIER_PAYMENT_TERMS'),
+    clientTemplateId: company.CLIENT_TEMPLATE_ID || '',
+    carrierTemplateId: company.CARRIER_TEMPLATE_ID || '',
+    cargoExclusions: get('CARGO_EXCLUSIONS'),
+    weightAssumption: get('WEIGHT_ASSUMPTION')
   };
 }
 
@@ -88,7 +92,7 @@ function onHomepage() {
     .setHeader(brandHeader_(s, s.companyName))
     .addSection(section)
     .addSection(s.historySheetId ? buildWorkspaceSection_(s) : buildSetupSection_(s));
-  if (s.historySheetId) card.addSection(buildSignatureSection_(s));
+  if (s.historySheetId) card.addSection(buildTemplatesSection_(s)).addSection(buildSignatureSection_(s));
   return card.build();
 }
 
@@ -166,7 +170,7 @@ function renderAnalysis_(requestId, request, settings) {
     quotes = readQuotes_(settings.historySheetId, requestId);
   }
   var similar = findSimilar_(request, history);
-  var suggestion = suggestPrice_(similar);
+  var suggestion = scaleSuggestion_(suggestPrice_(similar), request.truck_count);
   if (suggestion) CacheService.getUserCache().put('sugg:' + requestId, String(suggestion.sell), CACHE_SECONDS);
   var ranked = rankCarriers_(request, history, carriersTab);
   return buildAnalysisCard_(request, similar, suggestion, ranked, carriersTab, quotes, settings);
@@ -180,10 +184,16 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
 
   var details = CardService.newCardSection().setHeader(t_('read_from_email'))
     .addWidget(iconField_('MAP_PIN', t_('route'), route))
-    .addWidget(iconField_('CLOCK', t_('loading'), r.loading_date))
+    .addWidget(iconField_('CLOCK', t_('loading'), [r.loading_date, r.loading_time].filter(Boolean).join(' ')))
     .addWidget(iconField_('CLOCK', t_('delivery'), r.delivery_date))
     .addWidget(iconField_('DESCRIPTION', t_('cargo'), load))
-    .addWidget(iconField_('CAR', t_('truck'), truckLabel_(r.truck_type)));
+    .addWidget(iconField_('CAR', t_('truck'),
+      (r.truck_count > 1 ? r.truck_count + ' × ' : '') + truckLabel_(r.truck_type)));
+  if (r.consignee) details.addWidget(iconField_('PERSON', t_('field_consignee'), r.consignee));
+  if (r.customs_points) details.addWidget(iconField_('MAP_PIN', t_('field_customs_points'), r.customs_points));
+  if (r.special_requirements) {
+    details.addWidget(iconField_('DESCRIPTION', t_('field_special_requirements'), r.special_requirements));
+  }
   if (r.missing_info.length) {
     details.addWidget(iconField_('STAR', t_('missing'), r.missing_info.join('; ')));
   }
@@ -212,7 +222,8 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
   if (suggestion) {
     offer.addWidget(CardService.newTextParagraph().setText(t_('suggested', {
       sell: eur_(suggestion.sell), carrier: eur_(suggestion.carrier),
-      margin: eur_(suggestion.margin), n: suggestion.basedOn })));
+      margin: eur_(suggestion.margin), n: suggestion.basedOn }) +
+      (suggestion.trucks ? ' ' + t_('for_trucks', { n: suggestion.trucks }) : '')));
   }
   offer
     .addWidget(CardService.newTextInput()
@@ -231,7 +242,7 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
     .addSection(offer)
     .addSection(buildCarriersSection_(carriers, settings));
   if (settings.historySheetId) card.addSection(buildQuotesSection_(quotes, carriers, carriersTab));
-  return card.addSection(buildOrderSection_(settings)).build();
+  return card.addSection(buildOrderSection_(settings, r)).build();
 }
 
 /** Carriers on the route first, then the rest of the Carriers tab. */
@@ -305,11 +316,28 @@ function onSaveQuote(e) {
     .build();
 }
 
-function buildOrderSection_(settings) {
-  return CardService.newCardSection().setHeader(t_('order_header'))
+function buildOrderSection_(settings, r) {
+  var section = CardService.newCardSection().setHeader(t_('order_header'));
+  if (r && r.order) {
+    return section
+      .addWidget(CardService.newTextParagraph().setText(t_('order_created', { number: r.order.number })))
+      .addWidget(CardService.newButtonSet()
+        .addButton(primaryButton_(t_('update_folder'), settings)
+          .setOnClickAction(CardService.newAction().setFunctionName('onUpdateTransportFolder')))
+        .addButton(CardService.newTextButton()
+          .setText(t_('open_folder'))
+          .setOpenLink(CardService.newOpenLink().setUrl(
+            'https://drive.google.com/drive/folders/' + r.order.folder_id))));
+  }
+  return section
     .addWidget(CardService.newTextParagraph().setText(t_('order_intro')))
     .addWidget(primaryButton_(t_('prepare_orders'), settings)
       .setOnClickAction(CardService.newAction().setFunctionName('onOrderConfirmed')));
+}
+
+/** Label for a template field box: known fields are translated, others readable. */
+function fieldLabel_(name) {
+  return UI_TEXT['field_' + name] ? t_('field_' + name) : name.replace(/_/g, ' ');
 }
 
 /** "Иван Петров <ivan@x.bg>" -> {name, email} */
@@ -323,13 +351,15 @@ function onOrderConfirmed(e) {
   requireAuthorization_();
   var settings = getSettings_();
   if (!settings.historySheetId) return notify_(t_('connect_sheet_first'));
-  var request, message, carriersTab, quotes, ranked;
+  var request, message, carriersTab, quotes, ranked, fieldPlan;
   try {
     request = cachedRequest_(e);
     message = getMessage_(e);
     carriersTab = readCarriers_(settings.historySheetId);
     quotes = readQuotes_(settings.historySheetId, e.gmail.messageId);
     ranked = rankCarriers_(request, readHistory_(settings.historySheetId), carriersTab);
+    var templates = ensureTemplates_(SpreadsheetApp.openById(settings.historySheetId));
+    fieldPlan = templateFieldPlan_(templatePlaceholders_([templates.client, templates.carrier]), request);
   } catch (err) {
     return notify_(err.message);
   }
@@ -356,7 +386,13 @@ function onOrderConfirmed(e) {
     .addWidget(CardService.newTextInput().setFieldName('order_carrier_price')
       .setTitle(t_('carrier_price')).setValue(cheapest ? String(cheapest.price_eur) : ''))
     .addWidget(CardService.newTextInput().setFieldName('order_plates')
-      .setTitle(t_('plates')))
+      .setTitle(t_('plates')));
+  // Fields of the company's own templates: read from the email where possible.
+  fieldPlan.forEach(function (f) {
+    section.addWidget(CardService.newTextInput().setFieldName('tf_' + f.name)
+      .setTitle(fieldLabel_(f.name)).setValue(f.value));
+  });
+  section
     .addWidget(primaryButton_(t_('create_orders'), settings)
       .setOnClickAction(CardService.newAction().setFunctionName('onCreateOrders')));
   if (names.length === 0) {
@@ -382,6 +418,11 @@ function onCreateOrders(e) {
   if (!get('order_client')) return notify_(t_('enter_client'));
   if (sell == null) return notify_(t_('enter_sell'));
   if (carrierPrice == null) return notify_(t_('enter_carrier_price'));
+
+  var templateValues = {};
+  Object.keys(inputs).forEach(function (name) {
+    if (name.indexOf('tf_') === 0) templateValues[name.slice(3)] = inputs[name].stringInputs.value[0].trim();
+  });
 
   var settings = getSettings_();
   var folder;
@@ -414,11 +455,25 @@ function onCreateOrders(e) {
       to_city: request.to_city, to_country: request.to_country, to_address: request.to_address,
       loading_date: request.loading_date, delivery_date: request.delivery_date,
       cargo: request.cargo, pallets: request.pallets, weight_kg: request.weight_kg,
-      truck_type: request.truck_type
+      truck_type: request.truck_type, truck_count: request.truck_count,
+      loading_time: request.loading_time, consignee: request.consignee,
+      customs_points: request.customs_points, special_requirements: request.special_requirements,
+      template_values: templateValues,
+      request_date: message.getDate().getTime()
     };
     folder = createOrderDocuments_(order, message, settings);
   } catch (err) {
     return notify_(t_('orders_failed', { error: err.message }));
+  }
+  // Remembered with the analysis, so the email shows the order and can update its folder.
+  request.order = {
+    number: order.number, folder_id: folder.getId(), carrier_email: order.carrier_email,
+    carrier_name: order.carrier_name, request_date: order.request_date
+  };
+  try {
+    saveAnalysis_(settings, e.gmail.messageId, request);
+  } catch (err) {
+    // The order is created; only the "Update transport folder" button won't show.
   }
 
   var done = CardService.newCardSection()
@@ -426,7 +481,8 @@ function onCreateOrders(e) {
       number: order.number, sell: eur_(sell), carrier: order.carrier_name, carrierPrice: eur_(carrierPrice) })))
     .addWidget(CardService.newTextButton()
       .setText(t_('open_folder'))
-      .setOpenLink(CardService.newOpenLink().setUrl(folder.getUrl())));
+      .setOpenLink(CardService.newOpenLink().setUrl(folder.getUrl())))
+    .addWidget(CardService.newTextParagraph().setText(t_('update_folder_hint')));
   var card = CardService.newCardBuilder()
     .setHeader(brandHeader_(settings, t_('subtitle_done', { number: order.number })))
     .addSection(done)
@@ -528,4 +584,19 @@ function onCreateDraft(e) {
   var body = draftOffer_(request, price, message.getPlainBody(), settings);
   var draft = message.createDraftReply(body);
   return CardService.newComposeActionResponseBuilder().setGmailDraft(draft).build();
+}
+
+/** Saves the latest client and carrier email conversations into the transport folder. */
+function onUpdateTransportFolder(e) {
+  requireAuthorization_();
+  var saved;
+  try {
+    var request = cachedRequest_(e);
+    if (!request.order) return notify_(t_('analyze_first'));
+    var message = getMessage_(e);
+    saved = saveOrderThreads_(request.order, message, DriveApp.getFolderById(request.order.folder_id));
+  } catch (err) {
+    return notify_(err.message);
+  }
+  return notify_(t_('folder_updated', { n: saved }));
 }
