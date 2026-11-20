@@ -350,6 +350,18 @@ var UI_TEXT = {
     bg: 'Всички изпратени запитвания вече имат отговор. Създайте нови запитвания, за да опитате отново.'
   },
 
+  // Emails you sent
+  sent_subtitle: { en: 'Sent by you', bg: 'Изпратен от вас' },
+  sent_by_you: {
+    en: 'You sent this email, so there\'s nothing to analyze.',
+    bg: 'Вие сте изпратили този имейл, затова няма какво да се анализира.'
+  },
+  sent_price_request: {
+    en: 'Price request to <b>{carrier}</b> for {route}. When they reply, open their answer to save the quote.',
+    bg: 'Запитване за цена до <b>{carrier}</b> за {route}. Когато отговорят, отворете отговора им, ' +
+      'за да запишете офертата.'
+  },
+
   // Carrier replies
   reply_subtitle: { en: 'Quote from {carrier}', bg: 'Оферта от {carrier}' },
   reply_no_quote: {

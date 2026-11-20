@@ -51,9 +51,17 @@ function plusAddress_(me, tag) {
   return parts[0].split('+')[0] + '+' + tag + '@' + parts[1];
 }
 
-/** Where a carrier email really goes: in test mode, always your own tagged address. */
+/** Made-up addresses that can never be delivered (sample data): .example, .test, .invalid. */
+function isPlaceholderAddress_(email) {
+  return /\.(example|test|invalid)$/i.test(String(email).trim());
+}
+
+/**
+ * Where a carrier email really goes: your own tagged address in test mode, and
+ * always for made-up sample addresses (they could never be delivered anyway).
+ */
 function testRecipient_(email, me, testMode) {
-  return testMode ? plusAddress_(me, carrierSlug_(email)) : email;
+  return testMode || isPlaceholderAddress_(email) ? plusAddress_(me, carrierSlug_(email)) : email;
 }
 
 function testSubject_(subject, testMode) {
@@ -173,12 +181,18 @@ function simulateCarrierReplies_(requestId, request, settings) {
   return { replied: replied, waiting: waiting };
 }
 
+/** From the request's card, or from a sent price request (parameter `request`). */
 function onSimulateReplies(e) {
   requireAuthorization_();
   if (!isTestMode_()) return notify_(t_('test_mode_off'));
+  var params = e.commonEventObject.parameters || {};
+  var requestId = params.request || e.gmail.messageId;
+  var settings = getSettings_();
   var result;
   try {
-    result = simulateCarrierReplies_(e.gmail.messageId, cachedRequest_(e), getSettings_());
+    var request = loadAnalysis_(settings, requestId);
+    if (!request) return notify_(t_('analyze_first'));
+    result = simulateCarrierReplies_(requestId, request, settings);
   } catch (err) {
     return notify_(err.message);
   }

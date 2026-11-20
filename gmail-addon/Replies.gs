@@ -58,6 +58,30 @@ function findPriceRequest_(rows, senderEmail, subject, now) {
     candidates[0] || null;
 }
 
+/** All email addresses in To/Cc text like 'Георги <g@x.bg>, b@y.bg', lowercased. */
+function addressesIn_(text) {
+  return (String(text || '').match(/[^\s<>,;"']+@[^\s<>,;"']+/g) || []).map(function (a) {
+    return a.toLowerCase();
+  });
+}
+
+/**
+ * An email you sent to someone else (not one you sent only to yourself, like a
+ * test request): it isn't a request to analyze.
+ */
+function isOwnOutgoing_(fromEmail, recipients, me) {
+  var self = String(me).toLowerCase();
+  return String(fromEmail).toLowerCase() === self &&
+    recipients.some(function (r) { return r !== self; });
+}
+
+/** The latest recorded price request sent to one of these addresses; null if none. */
+function findSentPriceRequest_(rows, recipients) {
+  return rows.filter(function (r) {
+    return recipients.indexOf(String(r.recipient).trim().toLowerCase()) !== -1;
+  }).sort(function (a, b) { return toTime_(b.date) - toTime_(a.date); })[0] || null;
+}
+
 // ---- Sheet ------------------------------------------------------------------------------
 
 function readPriceRequests_(sheetId) {
@@ -95,6 +119,29 @@ function readQuote_(messageId, message) {
   quote.delivery_date = resolveDate_(quote.delivery_date, new Date());
   cache.put('quote:' + messageId, JSON.stringify(quote), CACHE_SECONDS);
   return quote;
+}
+
+/** Card for an email you sent: no analysis; for a price request, its status. */
+function buildSentCard_(message, settings) {
+  var section = CardService.newCardSection()
+    .addWidget(CardService.newTextParagraph().setText(t_('sent_by_you')));
+  if (isTestMode_()) section.addWidget(CardService.newTextParagraph().setText(t_('test_mode_banner')));
+  var recipients = addressesIn_(message.getTo() + ',' + message.getCc());
+  var row = settings.historySheetId ? findSentPriceRequest_(readPriceRequests_(settings.historySheetId), recipients) : null;
+  var request = row ? loadAnalysis_(settings, row.request) : null;
+  if (row && request) {
+    section.addWidget(CardService.newTextParagraph().setText(
+      t_('sent_price_request', { carrier: row.carrier, route: routeLabel_(request) })));
+    if (isTestMode_()) {
+      section.addWidget(primaryButton_(t_('simulate_replies'), settings).setOnClickAction(
+        CardService.newAction().setFunctionName('onSimulateReplies').setParameters({ request: String(row.request) })));
+    }
+  }
+  section.addWidget(languageButton_());
+  return CardService.newCardBuilder()
+    .setHeader(brandHeader_(settings, t_('sent_subtitle')))
+    .addSection(section)
+    .build();
 }
 
 function buildQuoteCard_(match, quote, settings) {

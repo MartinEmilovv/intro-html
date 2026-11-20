@@ -102,9 +102,15 @@ function onGmailMessage(e) {
   try {
     var saved = loadAnalysis_(settings, e.gmail.messageId);
     if (saved) return renderAnalysis_(e.gmail.messageId, saved, settings);
+    var message = getMessage_(e);
+    // An email you sent to someone else isn't a request: show what it is instead.
+    var me = Session.getEffectiveUser().getEmail();
+    if (isOwnOutgoing_(parseSender_(message.getFrom()).email, addressesIn_(message.getTo() + ',' + message.getCc()), me)) {
+      return buildSentCard_(message, settings);
+    }
     // A carrier's answer to one of our price requests: show it as a quote.
-    var reply = matchCarrierReply_(settings, getMessage_(e));
-    if (reply) return buildQuoteCard_(reply, readQuote_(e.gmail.messageId, getMessage_(e)), settings);
+    var reply = matchCarrierReply_(settings, message);
+    if (reply) return buildQuoteCard_(reply, readQuote_(e.gmail.messageId, message), settings);
   } catch (err) {
     // Fall back to the normal card below.
   }
@@ -114,6 +120,7 @@ function onGmailMessage(e) {
     .addWidget(CardService.newTextParagraph().setText(t_('analyze_intro')))
     .addWidget(button)
     .addWidget(languageButton_());
+  if (isTestMode_()) section.addWidget(CardService.newTextParagraph().setText(t_('test_mode_banner')));
   var card = CardService.newCardBuilder()
     .setHeader(brandHeader_(settings, t_('subtitle_requests')))
     .addSection(section);

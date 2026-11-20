@@ -116,3 +116,34 @@ test('missing columns are added at the end, existing ones keep their place', () 
     ctx.QUOTES_HEADER)), ['loading_date', 'delivery_date']);
   assert.deepStrictEqual(plain(ctx.missingColumns_(ctx.QUOTES_HEADER, ctx.QUOTES_HEADER)), []);
 });
+
+test('made-up sample addresses are always redirected to you, even outside test mode', () => {
+  assert.strictEqual(ctx.testRecipient_('georgi@primer-trans.example', me, false), 'martinemilovv+primer-trans@gmail.com');
+  assert.strictEqual(ctx.testRecipient_('a@carrier.test', me, false), 'martinemilovv+carrier@gmail.com');
+  assert.strictEqual(ctx.testRecipient_('real@carrier.example.com', me, false), 'real@carrier.example.com');
+  assert.strictEqual(ctx.isPlaceholderAddress_('x@y.invalid'), true);
+});
+
+test('addresses are read from To/Cc text', () => {
+  assert.deepStrictEqual(plain(ctx.addressesIn_('Георги Иванов <Georgi@X.bg>, "B, C" <b@y.bg>,')), ['georgi@x.bg', 'b@y.bg']);
+  assert.deepStrictEqual(plain(ctx.addressesIn_('')), []);
+});
+
+test('an email you sent to someone else is not a request to analyze', () => {
+  assert.strictEqual(ctx.isOwnOutgoing_(me, ['georgi@x.bg'], me), true);
+  assert.strictEqual(ctx.isOwnOutgoing_(me, ['martinemilovv+primer-trans@gmail.com'], me), true);
+});
+
+test('an email you sent only to yourself (a test request) can still be analyzed', () => {
+  assert.strictEqual(ctx.isOwnOutgoing_(me, [me], me), false);
+  assert.strictEqual(ctx.isOwnOutgoing_('client@x.bg', [me], me), false);
+});
+
+test('a sent email is matched to the price request recorded for its recipient', () => {
+  const rows = [
+    { date: new Date(2026, 10, 19), request: 'r1', carrier: 'A', recipient: 'Me+A@gmail.com' },
+    { date: new Date(2026, 10, 20), request: 'r2', carrier: 'A', recipient: 'me+a@gmail.com' },
+  ];
+  assert.strictEqual(ctx.findSentPriceRequest_(rows, ['me+a@gmail.com']).request, 'r2');
+  assert.strictEqual(ctx.findSentPriceRequest_(rows, ['other@x.bg']), null);
+});
