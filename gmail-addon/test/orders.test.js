@@ -70,9 +70,9 @@ test('order numbers are year plus a 4-digit running number', () => {
 
 test('history row follows the tab columns and leaves unknown columns empty', () => {
   const headers = ['date', 'from_city', 'from_country', 'to_city', 'to_country', 'truck_type',
-    'sold_eur', 'carrier_eur', 'carrier', 'Notes'];
+    'sold_eur', 'carrier_eur', 'carrier', 'delivery_date', 'Notes'];
   assert.deepStrictEqual(plain(ctx.historyRowFor_(headers, order)),
-    ['2026-11-12', 'Sofia', 'BG', 'Duisburg', 'DE', 'curtainsider', 2500, 2080, 'Пример Транс ЕООД', '']);
+    ['2026-11-12', 'Sofia', 'BG', 'Duisburg', 'DE', 'curtainsider', 2500, 2080, 'Пример Транс ЕООД', '2026-11-15', '']);
 });
 
 test('client email asks for their signed заявка; carrier email names the order', () => {

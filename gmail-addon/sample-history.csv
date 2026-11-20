@@ -1,9 +1,9 @@
-date,from_city,from_country,to_city,to_country,truck_type,sold_eur,carrier_eur,carrier
-2026-09-18,Sofia,BG,Dortmund,DE,curtainsider,2450,2050,Пример Транс ЕООД
-2026-08-27,Plovdiv,BG,Duisburg,DE,curtainsider,2600,2150,Демо Карго ООД
-2026-07-14,Sofia,BG,Cologne,DE,curtainsider,2380,2000,Пример Транс ЕООД
-2026-06-09,Sofia,BG,Essen,DE,curtainsider,2500,2120,Тест Логистик ЕООД
-2026-10-02,Sofia,BG,Duisburg,DE,mega,2550,2140,Sample Haulage SRL
-2026-09-05,Sofia,BG,Milan,IT,curtainsider,1900,1580,Демо Карго ООД
-2026-08-11,Ruse,BG,Bucharest,RO,box,450,360,Sample Haulage SRL
-2026-10-20,Varna,BG,Vienna,AT,reefer,1750,1450,Тест Логистик ЕООД
+date,from_city,from_country,to_city,to_country,truck_type,sold_eur,carrier_eur,carrier,delivery_date
+2026-09-18,Sofia,BG,Dortmund,DE,curtainsider,2450,2050,Пример Транс ЕООД,2026-09-21
+2026-08-27,Plovdiv,BG,Duisburg,DE,curtainsider,2600,2150,Демо Карго ООД,2026-08-30
+2026-07-14,Sofia,BG,Cologne,DE,curtainsider,2380,2000,Пример Транс ЕООД,2026-07-17
+2026-06-09,Sofia,BG,Essen,DE,curtainsider,2500,2120,Тест Логистик ЕООД,2026-06-12
+2026-10-02,Sofia,BG,Duisburg,DE,mega,2550,2140,Sample Haulage SRL,2026-10-05
+2026-09-05,Sofia,BG,Milan,IT,curtainsider,1900,1580,Демо Карго ООД,2026-09-07
+2026-08-11,Ruse,BG,Bucharest,RO,box,450,360,Sample Haulage SRL,2026-08-12
+2026-10-20,Varna,BG,Vienna,AT,reefer,1750,1450,Тест Логистик ЕООД,2026-10-22

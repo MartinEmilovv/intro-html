@@ -62,11 +62,6 @@ function eur_(n) {
   return '€' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-function month_(d) {
-  if (d instanceof Date) return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
-  return String(d).slice(0, 7);
-}
-
 function notify_(text) {
   return CardService.newActionResponseBuilder()
     .setNotification(CardService.newNotification().setText(text))
@@ -211,7 +206,8 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
     history.addWidget(CardService.newTextParagraph().setText(t_('no_similar')));
   } else {
     similar.forEach(function (h) {
-      history.addWidget(iconField_('DOLLAR', h.from_city + ' → ' + h.to_city + ' · ' + truckLabel_(h.truck_type) + ' · ' + month_(h.date), '')
+      history.addWidget(iconField_('DOLLAR', h.from_city + ' → ' + h.to_city + ' · ' + truckLabel_(h.truck_type) + ' · ' +
+        t_('delivered', { date: formatDay_(transportDate_(h)) }), '')
         .setText(t_('similar_line', { sold: eur_(h.sold_eur), carrier: eur_(h.carrier_eur),
           margin: eur_(h.sold_eur - h.carrier_eur) }))
         .setWrapText(true));
@@ -508,7 +504,8 @@ function buildCarriersSection_(carriers, settings) {
     section.addWidget(iconField_('PERSON', '', '')
       .setTopLabel([c.contact, c.phone].filter(String).join(' · ') || t_('no_contact'))
       .setText('<b>' + c.name + '</b>')
-      .setBottomLabel(b.from_city + ' → ' + b.to_city + ' · ' + truckLabel_(b.truck_type) + ' · ' + month_(b.date) +
+      .setBottomLabel(b.from_city + ' → ' + b.to_city + ' · ' + truckLabel_(b.truck_type) + ' · ' +
+        t_('delivered', { date: formatDay_(transportDate_(b)) }) +
         ': ' + eur_(b.carrier_eur) + ' · ' + t_(c.runs === 1 ? 'runs_one' : 'runs_many', { n: c.runs }))
       .setWrapText(true));
     if (c.email) {

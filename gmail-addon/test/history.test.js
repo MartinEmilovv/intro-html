@@ -60,3 +60,34 @@ test('skips rows without prices and blank rows', () => {
   assert.strictEqual(rows.length, 1);
   assert.strictEqual(ctx.findSimilar_(request, rows).length, 0);
 });
+
+test('past transports are dated by delivery, falling back to loading', () => {
+  assert.strictEqual(ctx.transportDate_({ date: '2026-09-18', delivery_date: '2026-09-21' }), '2026-09-21');
+  assert.strictEqual(ctx.transportDate_({ date: '2026-09-18', delivery_date: '' }), '2026-09-18');
+  assert.strictEqual(ctx.transportDate_({ date: '2026-09-18' }), '2026-09-18');
+});
+
+test('dates are shown as DD.MM.YYYY', () => {
+  assert.strictEqual(ctx.formatDay_('2026-09-21'), '21.09.2026');
+  assert.strictEqual(ctx.formatDay_(new Date(2026, 8, 21)), '21.09.2026');
+  assert.strictEqual(ctx.formatDay_('around week 38'), 'around week 38');
+  assert.strictEqual(ctx.formatDay_(''), '');
+});
+
+test('equally good matches: the most recently delivered comes first', () => {
+  const rows = [
+    { from_country: 'BG', to_country: 'DE', from_city: 'Sofia', to_city: 'Essen', truck_type: 'x',
+      sold_eur: 1, carrier_eur: 1, date: '2026-10-01', delivery_date: '2026-10-04' },
+    { from_country: 'BG', to_country: 'DE', from_city: 'Sofia', to_city: 'Bonn', truck_type: 'x',
+      sold_eur: 1, carrier_eur: 1, date: '2026-09-30', delivery_date: '2026-10-09' },
+  ];
+  const similar = ctx.findSimilar_({ from_country: 'BG', to_country: 'DE', from_city: 'Sofia', to_city: 'Köln' }, rows);
+  assert.deepStrictEqual([...similar.map((h) => h.to_city)], ['Bonn', 'Essen']);
+});
+
+test('sample history has a delivery date on every row, never before loading', () => {
+  for (const h of history) {
+    assert.match(String(h.delivery_date), /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(h.delivery_date >= h.date, h.to_city);
+  }
+});

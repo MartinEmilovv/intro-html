@@ -3,7 +3,9 @@
  * similar to a new request. Plain code, no AI, so the numbers are exact.
  *
  * Sheet layout (History tab, or the first tab; header row, any column order):
- *   date | from_city | from_country | to_city | to_country | truck_type | sold_eur | carrier_eur | carrier
+ *   date | from_city | from_country | to_city | to_country | truck_type | sold_eur | carrier_eur | carrier | delivery_date
+ * `date` is the loading date; `delivery_date` is when the transport happened (shown in
+ * the sidebar and used for "most recent first"; the loading date is used if it's empty).
  * The carrier column is optional and must match a name on the Carriers tab (Carriers.gs).
  * Cities in English, countries as 2-letter codes (BG, DE), truck_type one of
  * TRUCK_TYPES in Claude.gs.
@@ -32,8 +34,26 @@ function norm_(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
 }
 
+/** When a past transport happened: its delivery date, or its loading date if none. */
+function transportDate_(h) {
+  return h.delivery_date !== undefined && String(h.delivery_date).trim() !== '' ? h.delivery_date : h.date;
+}
+
+function isDate_(d) {
+  return Object.prototype.toString.call(d) === '[object Date]';
+}
+
+/** A date as DD.MM.YYYY (from a sheet Date or a "YYYY-MM-DD" text); other text as is. */
+function formatDay_(d) {
+  if (isDate_(d)) {
+    return ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear();
+  }
+  var m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? m[3] + '.' + m[2] + '.' + m[1] : String(d || '');
+}
+
 function toTime_(d) {
-  if (d instanceof Date) return d.getTime();
+  if (isDate_(d)) return d.getTime();
   var t = Date.parse(String(d));
   return isNaN(t) ? 0 : t;
 }
@@ -55,7 +75,7 @@ function rankHistory_(request, history) {
       if (norm_(h.to_city) === norm_(request.to_city)) score += 3;
       if (norm_(h.from_city) === norm_(request.from_city)) score += 2;
       if (norm_(h.truck_type) === norm_(request.truck_type)) score += 1;
-      return { row: h, score: score, time: toTime_(h.date) };
+      return { row: h, score: score, time: toTime_(transportDate_(h)) };
     })
     .sort(function (a, b) { return b.score - a.score || b.time - a.time; });
 }

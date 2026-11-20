@@ -135,7 +135,8 @@ function historyRowFor_(headers, order) {
     to_city: order.to_city, to_country: order.to_country,
     truck_type: order.truck_type,
     sold_eur: order.sell_eur, carrier_eur: order.carrier_eur,
-    carrier: order.carrier_name, order_number: order.number
+    carrier: order.carrier_name, order_number: order.number,
+    delivery_date: order.delivery_date
   };
   return headers.map(function (h) {
     var v = values[String(h).trim().toLowerCase()];

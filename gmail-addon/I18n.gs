@@ -135,6 +135,7 @@ var UI_TEXT = {
     en: 'No past transports on this country pair yet.',
     bg: 'Все още няма превози между тези две държави.'
   },
+  delivered: { en: 'delivered {date}', bg: 'доставен {date}' },
   similar_line: {
     en: 'Sold {sold} · Carrier {carrier} · Margin {margin}',
     bg: 'Продажба {sold} · Превозвач {carrier} · Марж {margin}'

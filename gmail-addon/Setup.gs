@@ -14,7 +14,7 @@
 var HISTORY_TAB = 'History';
 var SETTINGS_TAB = 'Settings';
 var HISTORY_HEADER = ['date', 'from_city', 'from_country', 'to_city', 'to_country', 'truck_type',
-  'sold_eur', 'carrier_eur', 'carrier', 'order_number'];
+  'sold_eur', 'carrier_eur', 'carrier', 'delivery_date', 'order_number'];
 var CARRIERS_HEADER = ['carrier', 'contact_person', 'email', 'phone', 'language'];
 var SETTINGS_HEADER = ['setting', 'value', 'what it is'];
 

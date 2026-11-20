@@ -101,6 +101,7 @@ signature under **Your signature**. To start with sample data, import
 | `sold_eur` | 2450 | What you charged the client |
 | `carrier_eur` | 2050 | What the carrier charged you |
 | `carrier` | Пример Транс ЕООД | The carrier's name, exactly as on the Carriers tab |
+| `delivery_date` | 2026-09-21 | When the transport happened: shown in the sidebar, newest first. If empty, `date` (loading) is used |
 | `order_number` | 2026-0001 | Filled in for orders created by the add-on |
 
 **Carriers tab**:
