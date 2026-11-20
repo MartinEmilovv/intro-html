@@ -163,7 +163,9 @@ Built so far in the Gmail add-on:
 **Next to build**
 - [ ] "Send via Viber" button per carrier (Viber Desktop link with the request
   pre-filled, or open chat + copy text), depending on the Viber test.
-- [ ] Save the carrier's email thread to the transport folder too.
+- [ ] Save the carrier's email thread (price request, quote, confirmation, signed заявка)
+  to the transport folder as a PDF, plus an "Update transport folder" button for
+  documents that arrive later.
 
 **Client templates (each client brings their own заявки)**
 - [ ] Template converter for onboarding: client's Word/.doc template -> Google Doc (layout,
@@ -172,10 +174,23 @@ Built so far in the Gmail add-on:
 - [ ] Template-driven order form: read which fields the client's template uses; fill what
   we can, and show the rest (e.g. customs points) as boxes in the order form.
 - [ ] Extract more from request emails when mentioned: number of trucks, loading time,
-  consignee (CMR), customs points, special requirements.
+  consignee (CMR), customs points, special requirements. Used in: the offer (restate,
+  ask for what's missing), carrier price requests, the заявки fields, and the price
+  suggestion (truck count, customs routes).
 - Reference: a real client -> forwarder заявка ("заявка договор": shipper/forwarder header,
   points 1–11 incl. consignee per CMR and customs, demurrage/cancellation terms,
   both signatures). Our starter templates are only a fallback.
+
+**To discuss with each client (onboarding)** — become company settings
+- [ ] Missing year in a date: assume the current year; a date already passed this year
+  means next year (e.g. "05.01" received in December). Confirm the rule.
+- [ ] Missing cargo type: the standard exclusions sentence for offers (e.g. "no ADR,
+  temperature-controlled or oversized cargo").
+- [ ] Missing weight: the assumed limit, in kg per pallet or kg per loading meter, stated
+  in the offer.
+- [ ] Their client and carrier заявка templates, and order numbering (running number or
+  from their TMS).
+- [ ] Payment terms, offer validity, acknowledgment wording, branding.
 
 **Before selling to clients**
 - [ ] Move the Anthropic API key to a small server of ours: the add-on calls our server,
