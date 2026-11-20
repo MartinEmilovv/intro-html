@@ -163,6 +163,18 @@ Built so far in the Gmail add-on:
   pre-filled, or open chat + copy text), depending on the Viber test.
 - [ ] Save the carrier's email thread to the transport folder too.
 
+**Client templates (each client brings their own заявки)**
+- [ ] Template converter for onboarding: client's Word/.doc template -> Google Doc (layout,
+  logo and legal text kept), with Claude replacing the blanks ("Дата и час на товарене:
+  ……") by field markers like `{{loading_date}}`; reviewed once by us or the client.
+- [ ] Template-driven order form: read which fields the client's template uses; fill what
+  we can, and show the rest (e.g. customs points) as boxes in the order form.
+- [ ] Extract more from request emails when mentioned: number of trucks, loading time,
+  consignee (CMR), customs points, special requirements.
+- Reference: a real client -> forwarder заявка ("заявка договор": shipper/forwarder header,
+  points 1–11 incl. consignee per CMR and customs, demurrage/cancellation terms,
+  both signatures). Our starter templates are only a fallback.
+
 **Before selling to clients**
 - [ ] Move the Anthropic API key to a small server of ours: the add-on calls our server,
   only the server calls Claude. Never ship the key inside a client's copy of the script.
