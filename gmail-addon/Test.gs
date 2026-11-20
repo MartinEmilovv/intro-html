@@ -3,8 +3,8 @@
  * own Gmail, without emailing any real carrier.
  *
  * It's personal: turn it on by running enableTestMode in the Apps Script editor
- * (off: disableTestMode). It affects only the account that ran it; clients and
- * colleagues never see it.
+ * (off: disableTestMode). It affects only the account that ran it (its address is
+ * added to TEST_MODE_USERS in Script Properties); clients and colleagues never see it.
  *
  * While it's on:
  * - every email to a carrier goes to your own address with a tag, e.g.
@@ -17,23 +17,42 @@
 var TEST_SUBJECT_PREFIX = '[TEST] ';
 var TRANSIT_DAYS = { DE: 3, NL: 3, BE: 3, FR: 4, IT: 2, AT: 2, RO: 1, GR: 2, TR: 3, PL: 3, CZ: 2, HU: 1 };
 
+/**
+ * Test mode is stored as a list of email addresses in Script Properties
+ * (TEST_MODE_USERS), which the Gmail sidebar reliably reads. Only people with
+ * access to this editor can change it, and it applies only to the addresses listed.
+ */
 function enableTestMode() {
-  PropertiesService.getUserProperties().setProperty('TEST_MODE', 'on');
-  console.log('Test mode is on for ' + Session.getEffectiveUser().getEmail() +
-    '. Carrier emails go to your own address. Run disableTestMode to turn it off.');
+  var me = Session.getEffectiveUser().getEmail();
+  var p = PropertiesService.getScriptProperties();
+  var users = testModeUsers_(p.getProperty('TEST_MODE_USERS'));
+  if (users.indexOf(me.toLowerCase()) === -1) users.push(me.toLowerCase());
+  p.setProperty('TEST_MODE_USERS', users.join(','));
+  console.log('Test mode is on for ' + me + '. Carrier emails go to your own address. ' +
+    'Reload Gmail. Run disableTestMode to turn it off.');
 }
 
 function disableTestMode() {
-  PropertiesService.getUserProperties().deleteProperty('TEST_MODE');
-  console.log('Test mode is off.');
+  var me = Session.getEffectiveUser().getEmail().toLowerCase();
+  var p = PropertiesService.getScriptProperties();
+  var users = testModeUsers_(p.getProperty('TEST_MODE_USERS')).filter(function (u) { return u !== me; });
+  if (users.length) p.setProperty('TEST_MODE_USERS', users.join(',')); else p.deleteProperty('TEST_MODE_USERS');
+  console.log('Test mode is off for ' + me + '.');
 }
 
 function isTestMode_() {
   try {
-    return PropertiesService.getUserProperties().getProperty('TEST_MODE') === 'on';
+    var users = testModeUsers_(PropertiesService.getScriptProperties().getProperty('TEST_MODE_USERS'));
+    return users.indexOf(Session.getEffectiveUser().getEmail().toLowerCase()) !== -1;
   } catch (err) {
     return false;
   }
+}
+
+/** "a@x.com, B@y.com" -> ['a@x.com', 'b@y.com'] */
+function testModeUsers_(text) {
+  return String(text || '').split(/[,;\s]+/).map(function (u) { return u.trim().toLowerCase(); })
+    .filter(function (u) { return u.indexOf('@') > 0; });
 }
 
 // ---- Pure helpers (tested in test/testmode.test.js) ------------------------------

@@ -147,3 +147,9 @@ test('a sent email is matched to the price request recorded for its recipient', 
   assert.strictEqual(ctx.findSentPriceRequest_(rows, ['me+a@gmail.com']).request, 'r2');
   assert.strictEqual(ctx.findSentPriceRequest_(rows, ['other@x.bg']), null);
 });
+
+test('the test mode list is read from Script Properties text', () => {
+  assert.deepStrictEqual(plain(ctx.testModeUsers_(' Martin@Gmail.com, other@x.bg;  ,')), ['martin@gmail.com', 'other@x.bg']);
+  assert.deepStrictEqual(plain(ctx.testModeUsers_(null)), []);
+  assert.deepStrictEqual(plain(ctx.testModeUsers_('not-an-address')), []);
+});
