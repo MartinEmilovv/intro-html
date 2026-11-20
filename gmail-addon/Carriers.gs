@@ -118,3 +118,48 @@ function buildCarrierEmail_(language, contact, body, signature) {
   if (signature) lines.push(signature);
   return lines.join('\n');
 }
+
+/** A Carriers tab row in the same shape as a ranked carrier, with no history on the route. */
+function carrierFromTab_(c) {
+  return {
+    key: norm_(c.carrier), name: String(c.carrier || '').trim(),
+    contact: String(c.contact_person || '').trim(), email: String(c.email || '').trim(),
+    phone: String(c.phone || '').trim(), language: norm_(c.language) || 'bg', best: null, runs: 0
+  };
+}
+
+/** Carriers on the route first (best match first), then every other carrier on the tab. */
+function allCarrierChoices_(ranked, carriersTab) {
+  var seen = {};
+  ranked.forEach(function (c) { seen[c.key] = true; });
+  return ranked.concat(carriersTab.map(carrierFromTab_).filter(function (c) {
+    if (!c.key || seen[c.key]) return false;
+    seen[c.key] = true;
+    return true;
+  }));
+}
+
+function validEmail_(email) {
+  return /^[^\s@<>,;"']+@[^\s@<>,;"']+\.[a-z]{2,}$/i.test(String(email).trim());
+}
+
+/** Text that Sheets would otherwise read as a formula ("+359 ..." or "=...") is kept as text. */
+function sheetText_(value) {
+  var v = String(value == null ? '' : value).trim();
+  return /^[=+\-@]/.test(v) ? "'" + v : v;
+}
+
+/** Adds a carrier to the Carriers tab. Returns its key; throws if the name already exists. */
+function addCarrier_(sheetId, carrier) {
+  var ss = SpreadsheetApp.openById(sheetId);
+  var sheet = ensureTab_(ss, CARRIERS_TAB, CARRIERS_HEADER);
+  var exists = rowsToObjects_(sheet.getDataRange().getValues()).some(function (c) {
+    return norm_(c.carrier) === norm_(carrier.name);
+  });
+  if (exists) throw new Error(t_('carrier_exists', { carrier: carrier.name }));
+  appendByHeader_(sheet, CARRIERS_HEADER, {
+    carrier: sheetText_(carrier.name), contact_person: sheetText_(carrier.contact),
+    email: carrier.email.trim(), phone: sheetText_(carrier.phone), language: carrier.language
+  });
+  return norm_(carrier.name);
+}

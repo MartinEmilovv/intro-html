@@ -166,6 +166,26 @@ var UI_TEXT = {
   runs_one: { en: '{n} run on this route', bg: '{n} курс по този маршрут' },
   runs_many: { en: '{n} runs on this route', bg: '{n} курса по този маршрут' },
   ask_price: { en: 'Ask for a price', bg: 'Поискай цена' },
+  new_on_route: { en: 'No transports on this route yet', bg: 'Все още няма превози по този маршрут' },
+  add_carrier_header: { en: 'Add a carrier', bg: 'Добави превозвач' },
+  carrier_company: { en: 'Company name', bg: 'Име на фирмата' },
+  carrier_contact_person: { en: 'Contact person', bg: 'Лице за контакт' },
+  carrier_email: { en: 'Email', bg: 'Имейл' },
+  carrier_phone: { en: 'Phone (optional)', bg: 'Телефон (по желание)' },
+  carrier_language: { en: 'Language of emails to them', bg: 'Език на имейлите до тях' },
+  lang_bg: { en: 'Bulgarian', bg: 'Български' },
+  lang_en: { en: 'English', bg: 'Английски' },
+  add_carrier: { en: 'Add carrier', bg: 'Добави превозвача' },
+  carrier_added: {
+    en: '{carrier} added to your carriers and ticked for this request.',
+    bg: '{carrier} е добавен към превозвачите ви и е отметнат за това запитване.'
+  },
+  carrier_exists: {
+    en: '{carrier} is already on your Carriers tab.',
+    bg: '{carrier} вече е в раздела Carriers.'
+  },
+  enter_carrier_name: { en: 'Enter the carrier\'s company name.', bg: 'Въведете името на фирмата на превозвача.' },
+  enter_valid_email: { en: 'Enter a valid email address.', bg: 'Въведете валиден имейл адрес.' },
   no_carrier_email: {
     en: 'None of these carriers has an email on the Carriers tab.',
     bg: 'Никой от тези превозвачи няма имейл в раздела Carriers.'

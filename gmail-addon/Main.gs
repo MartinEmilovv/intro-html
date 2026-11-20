@@ -168,7 +168,7 @@ function cachedRequest_(e) {
 }
 
 /** Reads the sheet (no Claude call) and builds the analysis card. */
-function renderAnalysis_(requestId, request, settings) {
+function renderAnalysis_(requestId, request, settings, preselect) {
   var history = [], carriersTab = [], quotes = [];
   if (settings.historySheetId) {
     history = readHistory_(settings.historySheetId);
@@ -179,10 +179,10 @@ function renderAnalysis_(requestId, request, settings) {
   var suggestion = scaleSuggestion_(suggestPrice_(similar), request.truck_count);
   if (suggestion) CacheService.getUserCache().put('sugg:' + requestId, String(suggestion.sell), CACHE_SECONDS);
   var ranked = rankCarriers_(request, history, carriersTab);
-  return buildAnalysisCard_(request, similar, suggestion, ranked, carriersTab, quotes, settings);
+  return buildAnalysisCard_(request, similar, suggestion, ranked, carriersTab, quotes, settings, preselect);
 }
 
-function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quotes, settings) {
+function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quotes, settings, preselect) {
   var route = [r.from_city, r.from_country].filter(String).join(', ') + ' → ' +
     [r.to_city, r.to_country].filter(String).join(', ');
   var load = [r.cargo, r.pallets != null ? t_('pallets', { n: r.pallets }) : '',
@@ -249,7 +249,8 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
     .addSection(details)
     .addSection(history)
     .addSection(offer)
-    .addSection(buildCarriersSection_(carriers, settings));
+    .addSection(buildCarriersSection_(carriers, carriersTab, settings, preselect));
+  if (settings.historySheetId) card.addSection(buildAddCarrierSection_(settings));
   if (settings.historySheetId) card.addSection(buildQuotesSection_(quotes, carriers, carriersTab));
   return card.addSection(buildOrderSection_(settings, r)).build();
 }
@@ -508,8 +509,13 @@ function onCreateOrders(e) {
     .build();
 }
 
-function buildCarriersSection_(carriers, settings) {
+/**
+ * Carriers to ask: those who ran this route (with their best match), then every
+ * other carrier on the Carriers tab. `preselect`: a carrier just added, ticked.
+ */
+function buildCarriersSection_(ranked, carriersTab, settings, preselect) {
   var section = CardService.newCardSection().setHeader(t_('carriers_header'));
+  var carriers = allCarrierChoices_(ranked, carriersTab);
   if (!settings.historySheetId || carriers.length === 0) {
     return section.addWidget(CardService.newTextParagraph().setText(t_('no_carriers')));
   }
@@ -524,12 +530,14 @@ function buildCarriersSection_(carriers, settings) {
     section.addWidget(iconField_('PERSON', '', '')
       .setTopLabel([c.contact, c.phone].filter(String).join(' · ') || t_('no_contact'))
       .setText('<b>' + c.name + '</b>')
-      .setBottomLabel(b.from_city + ' → ' + b.to_city + ' · ' + truckLabel_(b.truck_type) + ' · ' +
+      .setBottomLabel(b ? b.from_city + ' → ' + b.to_city + ' · ' + truckLabel_(b.truck_type) + ' · ' +
         t_('delivered', { date: formatDay_(transportDate_(b)) }) +
-        ': ' + eur_(b.carrier_eur) + ' · ' + t_(c.runs === 1 ? 'runs_one' : 'runs_many', { n: c.runs }))
+        ': ' + eur_(b.carrier_eur) + ' · ' + t_(c.runs === 1 ? 'runs_one' : 'runs_many', { n: c.runs })
+        : t_('new_on_route'))
       .setWrapText(true));
     if (c.email) {
-      pick.addItem(c.name, c.key, withEmail < PRESELECT_CARRIERS);
+      var ticked = preselect ? c.key === preselect : (b && withEmail < PRESELECT_CARRIERS);
+      pick.addItem(c.name, c.key, !!ticked);
       withEmail += 1;
     }
   });
@@ -561,7 +569,8 @@ function onDraftCarrierRequests(e) {
 
   var settings = getSettings_();
   var history = readHistory_(settings.historySheetId);
-  var chosen = rankCarriers_(request, history, readCarriers_(settings.historySheetId))
+  var carriersTab = readCarriers_(settings.historySheetId);
+  var chosen = allCarrierChoices_(rankCarriers_(request, history, carriersTab), carriersTab)
     .filter(function (c) { return c.email && picked.indexOf(c.key) !== -1; });
 
   var texts = {};
@@ -622,4 +631,47 @@ function onUpdateTransportFolder(e) {
     return notify_(err.message);
   }
   return notify_(t_('folder_updated', { n: saved }));
+}
+
+function buildAddCarrierSection_(settings) {
+  var language = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.DROPDOWN)
+    .setFieldName('new_carrier_language')
+    .setTitle(t_('carrier_language'))
+    .addItem(t_('lang_bg'), 'bg', true)
+    .addItem(t_('lang_en'), 'en', false);
+  return CardService.newCardSection().setHeader(t_('add_carrier_header'))
+    .setCollapsible(true).setNumUncollapsibleWidgets(0)
+    .addWidget(CardService.newTextInput().setFieldName('new_carrier_name').setTitle(t_('carrier_company')))
+    .addWidget(CardService.newTextInput().setFieldName('new_carrier_contact').setTitle(t_('carrier_contact_person')))
+    .addWidget(CardService.newTextInput().setFieldName('new_carrier_email').setTitle(t_('carrier_email')))
+    .addWidget(CardService.newTextInput().setFieldName('new_carrier_phone').setTitle(t_('carrier_phone')))
+    .addWidget(language)
+    .addWidget(primaryButton_(t_('add_carrier'), settings)
+      .setOnClickAction(CardService.newAction().setFunctionName('onAddCarrier')));
+}
+
+/** Saves a new carrier to the Carriers tab and shows the request again with it ticked. */
+function onAddCarrier(e) {
+  requireAuthorization_();
+  var inputs = e.commonEventObject.formInputs || {};
+  var get = function (name) { return inputs[name] ? inputs[name].stringInputs.value[0].trim() : ''; };
+  var carrier = {
+    name: get('new_carrier_name'), contact: get('new_carrier_contact'), email: get('new_carrier_email'),
+    phone: get('new_carrier_phone'), language: get('new_carrier_language') || 'bg'
+  };
+  if (!carrier.name) return notify_(t_('enter_carrier_name'));
+  if (!validEmail_(carrier.email)) return notify_(t_('enter_valid_email'));
+  var settings = getSettings_();
+  var key, request;
+  try {
+    request = cachedRequest_(e);
+    key = addCarrier_(settings.historySheetId, carrier);
+  } catch (err) {
+    return notify_(err.message);
+  }
+  return CardService.newActionResponseBuilder()
+    .setNavigation(CardService.newNavigation().updateCard(renderAnalysis_(e.gmail.messageId, request, settings, key)))
+    .setNotification(CardService.newNotification().setText(t_('carrier_added', { carrier: carrier.name })))
+    .build();
 }
