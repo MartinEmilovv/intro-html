@@ -149,12 +149,14 @@ Built so far in the Gmail add-on:
   Viber Desktop, paste `viber://chat?number=%2B359888123456&draft=Тест%20от%20Freight%20Assistant`
   (a real contact's number) into the browser and report: (a) chat opens with the text
   typed in, (b) chat opens empty, (c) nothing opens. Don't press Send.
-- [ ] Share real заявки examples (client's заявка за транспорт and заявка към превозвач),
-  anonymized, in Google Drive, to replace the starter templates; and say whether the
-  order number should come from the TMS (the MVP uses a running number).
-- [ ] After updating: paste your price history sheet link under "Use this sheet" in the
-  sidebar, then fill in the company name and terms on its Settings tab.
-- [ ] Test the acknowledgment, carriers, quotes and заявки features in Gmail.
+- [ ] Re-test the заявки (Prepare -> Create transport orders): drafts, PDFs in the
+  transport folder, History row. Also test the acknowledgment, language button, company
+  settings and logo in the sidebar, and reopening an analyzed email.
+- [ ] Make the demo logo viewable (Drive: Share -> Anyone with the link) for the sidebar.
+- [ ] Find the first pilot forwarder. Get their client and carrier заявка templates,
+  their email system, their TMS, and whether order numbers should come from the TMS.
+- [ ] Share the FIATA knowledge files (attach in the chat, or a Drive folder).
+- [ ] Rough monthly price a forwarder would pay (compare with measured Claude cost).
 - [ ] Find out which TMS the target forwarders use, and for each: does it have an API
   or a file import (Excel/CSV/XML), and does it run in a browser or as a desktop program?
 
