@@ -82,6 +82,7 @@ function onHomepage() {
   var section = CardService.newCardSection()
     .addWidget(CardService.newTextParagraph().setText(t_('home_intro')))
     .addWidget(languageButton_());
+  if (isTestMode_()) section.addWidget(CardService.newTextParagraph().setText(t_('test_mode_banner')));
   if (!hasKey) section.addWidget(field_(t_('api_key_label'), t_('api_key_missing')));
   var card = CardService.newCardBuilder()
     .setHeader(brandHeader_(s, s.companyName))
@@ -101,6 +102,9 @@ function onGmailMessage(e) {
   try {
     var saved = loadAnalysis_(settings, e.gmail.messageId);
     if (saved) return renderAnalysis_(e.gmail.messageId, saved, settings);
+    // A carrier's answer to one of our price requests: show it as a quote.
+    var reply = matchCarrierReply_(settings, getMessage_(e));
+    if (reply) return buildQuoteCard_(reply, readQuote_(e.gmail.messageId, getMessage_(e)), settings);
   } catch (err) {
     // Fall back to the normal card below.
   }
@@ -177,7 +181,9 @@ function buildAnalysisCard_(r, similar, suggestion, carriers, carriersTab, quote
   var load = [r.cargo, r.pallets != null ? t_('pallets', { n: r.pallets }) : '',
     r.weight_kg != null ? r.weight_kg + ' kg' : ''].filter(String).join(' · ');
 
-  var details = CardService.newCardSection().setHeader(t_('read_from_email'))
+  var details = CardService.newCardSection().setHeader(t_('read_from_email'));
+  if (isTestMode_()) details.addWidget(CardService.newTextParagraph().setText(t_('test_mode_banner')));
+  details
     .addWidget(iconField_('MAP_PIN', t_('route'), route))
     .addWidget(iconField_('CLOCK', t_('loading'), [r.loading_date, r.loading_time].filter(Boolean).join(' ')))
     .addWidget(iconField_('CLOCK', t_('delivery'), r.delivery_date))
@@ -262,11 +268,18 @@ function buildQuotesSection_(quotes, ranked, carriersTab) {
   quotes.forEach(function (q, i) {
     section.addWidget(iconField_('DOLLAR', '', '')
       .setText((i === 0 ? '<b>' : '') + q.carrier + ': ' + eur_(q.price_eur) + (i === 0 ? '</b> ' + t_('cheapest') : ''))
-      .setBottomLabel(t_('source_' + q.source) + (q.date instanceof Date ? ' · ' + Utilities.formatDate(q.date,
-        Session.getScriptTimeZone(), 'dd.MM HH:mm') : ''))
+      .setBottomLabel(t_('source_' + q.source) +
+        (q.loading_date ? ' · ' + t_('quote_dates', { loading: formatDay_(q.loading_date),
+          delivery: formatDay_(q.delivery_date) }) : '') +
+        (isDate_(q.date) ? ' · ' + Utilities.formatDate(q.date, Session.getScriptTimeZone(), 'dd.MM HH:mm') : ''))
       .setWrapText(true));
   });
 
+  if (isTestMode_()) {
+    section.addWidget(CardService.newTextButton()
+      .setText(t_('simulate_replies'))
+      .setOnClickAction(CardService.newAction().setFunctionName('onSimulateReplies')));
+  }
   var names = carrierChoices_(ranked, carriersTab);
   if (names.length === 0) return section;
   var carrierPick = CardService.newSelectionInput()
@@ -443,7 +456,7 @@ function onCreateOrders(e) {
       sell_eur: sell,
       carrier_name: String(carrier.carrier).trim(),
       carrier_contact: String(carrier.contact_person || '').trim(),
-      carrier_email: String(carrier.email).trim(),
+      carrier_email: testRecipient_(String(carrier.email).trim(), Session.getEffectiveUser().getEmail(), isTestMode_()),
       carrier_language: norm_(carrier.language) || 'bg',
       carrier_eur: carrierPrice,
       plates: get('order_plates'),
@@ -545,12 +558,18 @@ function onDraftCarrierRequests(e) {
     .filter(function (c) { return c.email && picked.indexOf(c.key) !== -1; });
 
   var texts = {};
+  var testMode = isTestMode_();
+  var me = Session.getEffectiveUser().getEmail();
   try {
     chosen.forEach(function (c) {
       if (!texts[c.language]) texts[c.language] = draftCarrierRequest_(request, c.language);
       var t = texts[c.language];
-      GmailApp.createDraft(c.email, t.subject,
+      var recipient = testRecipient_(c.email, me, testMode);
+      var subject = testSubject_(t.subject, testMode);
+      GmailApp.createDraft(recipient, subject,
         buildCarrierEmail_(c.language, c.contact, t.body, settings.signature));
+      // Recorded so the carrier's reply is recognized as a quote for this request.
+      recordPriceRequest_(settings.historySheetId, e.gmail.messageId, c.name, recipient, subject);
     });
   } catch (err) {
     return notify_(err.message);

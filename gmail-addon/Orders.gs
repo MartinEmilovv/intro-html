@@ -397,7 +397,8 @@ function createOrderDocuments_(order, message, settings) {
 
   message.createDraftReply(buildClientOrderEmail_(order, settings.signature), { attachments: [clientPdf] });
   var carrierEmail = buildCarrierOrderEmail_(order, settings.signature);
-  GmailApp.createDraft(order.carrier_email, carrierEmail.subject, carrierEmail.body, { attachments: [carrierPdf] });
+  GmailApp.createDraft(order.carrier_email, testSubject_(carrierEmail.subject, isTestMode_()), carrierEmail.body,
+    { attachments: [carrierPdf] });
 
   appendToHistory_(ss, order);
   saveOrderThreads_(order, message, folder);

@@ -329,6 +329,44 @@ var UI_TEXT = {
   },
   open_template: { en: 'Open the template', bg: 'Отвори шаблона' },
 
+  // Test mode (only for the person who turned it on in the editor)
+  test_mode_banner: {
+    en: '<b>TEST MODE:</b> carrier emails go to your own address; nothing reaches real carriers.',
+    bg: '<b>ТЕСТОВ РЕЖИМ:</b> имейлите до превозвачи отиват на вашия адрес; нищо не стига до ' +
+      'истински превозвачи.'
+  },
+  test_mode_off: { en: 'Test mode is off.', bg: 'Тестовият режим е изключен.' },
+  simulate_replies: { en: 'Simulate carrier replies', bg: 'Симулирай отговори от превозвачи' },
+  simulate_done: {
+    en: '{n} carrier reply(ies) arrived in your inbox. Open one to save the quote.',
+    bg: 'Пристигнаха отговори от превозвачи: {n}. Отворете отговор, за да запишете офертата.'
+  },
+  simulate_send_first: {
+    en: 'Send the price request drafts first, then simulate the replies.',
+    bg: 'Първо изпратете черновите със запитвания за цена, после симулирайте отговорите.'
+  },
+  simulate_none: {
+    en: 'Every sent price request already has a reply. Draft new price requests to try again.',
+    bg: 'Всички изпратени запитвания вече имат отговор. Създайте нови запитвания, за да опитате отново.'
+  },
+
+  // Carrier replies
+  reply_subtitle: { en: 'Quote from {carrier}', bg: 'Оферта от {carrier}' },
+  reply_no_quote: {
+    en: 'This reply doesn\'t seem to contain a price. You can still enter one below.',
+    bg: 'Този отговор изглежда не съдържа цена. Можете да въведете цена по-долу.'
+  },
+  reply_currency: { en: 'Price (not EUR)', bg: 'Цена (не в EUR)' },
+  reply_truck: { en: 'Availability', bg: 'Наличност' },
+  reply_no_truck: { en: 'No truck available', bg: 'Няма свободен камион' },
+  reply_notes: { en: 'Conditions', bg: 'Условия' },
+  reply_saved: {
+    en: 'Saved {carrier}: {price}. Open the client\'s request to compare quotes and confirm the order.',
+    bg: 'Записано: {carrier}, {price}. Отворете запитването на клиента, за да сравните офертите ' +
+      'и потвърдите поръчката.'
+  },
+  quote_dates: { en: 'loading {loading}, delivery {delivery}', bg: 'товарене {loading}, доставка {delivery}' },
+
   // Claude
   api_key_not_set: {
     en: 'ANTHROPIC_API_KEY is not set in Script Properties.',

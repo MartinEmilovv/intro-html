@@ -37,6 +37,8 @@ the draft opens in Gmail for you to check and send.
 | `Requests.gs` | Saves each analysis (Requests tab), so reopening an email shows it again |
 | `I18n.gs` | Every sidebar text in English and Bulgarian, and the language button |
 | `Templates.gs` | Converts a company's own Word/Docs заявка into a fillable template |
+| `Replies.gs` | Recognizes carriers' replies to price requests and reads their quotes |
+| `Test.gs` | Personal test mode and simulated carrier replies |
 | `Ack.gs` | Automatic acknowledgment of new transport requests |
 | `Carriers.gs` | Finds carriers who ran similar routes and drafts price requests to them |
 | `Quotes.gs` | Records carrier quotes on a Quotes tab |
@@ -256,6 +258,32 @@ with the client and the carrier as PDFs (carrier conversations that started afte
 client's request, or that mention the order number). Reopen the request email and click
 **Update transport folder** when signed заявки or new emails arrive; files are updated
 in place, not duplicated.
+
+## Carrier replies become quotes
+
+Every price request drafted from the sidebar is recorded on a **PriceRequests** tab.
+When you open a carrier's reply to one, the sidebar shows **Quote from <carrier>**:
+Claude reads the price, loading and delivery dates, availability and conditions from
+the reply; check the price and click **Save quote**. The quote (with its dates) is
+saved for the client's request, and the order form picks the cheapest one.
+
+## Test mode (only for you)
+
+To try the whole flow without emailing real carriers, run `enableTestMode` in the
+Apps Script editor (`disableTestMode` to stop). It applies only to the account that
+ran it; clients never see it. While it's on:
+
+- every carrier email goes to your own address with a tag (`you+primer-trans@gmail.com`),
+  so it lands in your inbox; this applies to all carriers, not just the samples;
+- new drafts get `[TEST]` in the subject, and the sidebar shows a **TEST MODE** banner;
+- under **Carrier quotes**, **Simulate carrier replies** makes each carrier answer your
+  *sent* price requests in the same conversation, with a price near its past prices
+  and loading/delivery dates (marked as a simulated reply).
+
+The full flow: analyze a request → **Draft price requests** → send the drafts →
+**Simulate carrier replies** → open each reply → **Save quote** → back on the request,
+**Prepare transport orders** (cheapest carrier pre-selected) → **Create** → send the two
+drafts → **Update transport folder**.
 
 ## Language
 

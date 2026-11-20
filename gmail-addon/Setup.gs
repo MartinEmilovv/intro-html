@@ -105,6 +105,7 @@ function ensureCompanyTabs_(ss) {
   ensureTab_(ss, CARRIERS_TAB, CARRIERS_HEADER);
   ensureTab_(ss, QUOTES_TAB, QUOTES_HEADER);
   ensureTab_(ss, REQUESTS_TAB, REQUESTS_HEADER);
+  ensureTab_(ss, PRICE_REQUESTS_TAB, PRICE_REQUESTS_HEADER);
   var settings = ensureTab_(ss, SETTINGS_TAB, SETTINGS_HEADER);
   var have = settingsFromRows_(settings.getDataRange().getValues());
   companySettingDefs_().forEach(function (d) {

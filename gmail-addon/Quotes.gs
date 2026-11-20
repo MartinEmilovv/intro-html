@@ -3,12 +3,12 @@
  * Saved on a "Quotes" tab of the price history sheet (created on first use),
  * listed in the sidebar, and used to pre-fill the order form.
  *
- * Quotes tab: date | request | route | carrier | price_eur | source
+ * Quotes tab: date | request | route | carrier | price_eur | source | loading_date | delivery_date
  * `request` is the Gmail message ID of the transport request.
  */
 
 var QUOTES_TAB = 'Quotes';
-var QUOTES_HEADER = ['date', 'request', 'route', 'carrier', 'price_eur', 'source'];
+var QUOTES_HEADER = ['date', 'request', 'route', 'carrier', 'price_eur', 'source', 'loading_date', 'delivery_date'];
 var QUOTE_SOURCES = ['Email', 'Viber', 'Phone'];
 
 function getQuotesSheet_(sheetId) {
@@ -34,10 +34,33 @@ function quotesForRequest_(rows, requestId) {
     .sort(function (a, b) { return Number(a.price_eur) - Number(b.price_eur); });
 }
 
-function saveQuote_(sheetId, requestId, request, carrier, priceEur, source) {
-  getQuotesSheet_(sheetId).appendRow([
-    new Date(), String(requestId), routeLabel_(request), carrier, priceEur, source
-  ]);
+function saveQuote_(sheetId, requestId, request, carrier, priceEur, source, dates) {
+  appendByHeader_(getQuotesSheet_(sheetId), QUOTES_HEADER, {
+    date: new Date(), request: String(requestId), route: routeLabel_(request), carrier: carrier,
+    price_eur: priceEur, source: source,
+    loading_date: dates && dates.loading_date || '', delivery_date: dates && dates.delivery_date || ''
+  });
+}
+
+/** Header cells to add so a tab has every column, keeping existing columns where they are. */
+function missingColumns_(header, wanted) {
+  var have = header.map(function (h) { return String(h).trim().toLowerCase(); });
+  return wanted.filter(function (w) { return have.indexOf(w) === -1; });
+}
+
+/** Appends a row by column name; adds any missing columns at the end first. */
+function appendByHeader_(sheet, wanted, values) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var missing = missingColumns_(header, wanted);
+  if (missing.length) {
+    sheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
+    header = header.concat(missing);
+  }
+  sheet.appendRow(header.map(function (h) {
+    var v = values[String(h).trim().toLowerCase()];
+    return v == null ? '' : v;
+  }));
 }
 
 /** "Sofia → Duisburg" */

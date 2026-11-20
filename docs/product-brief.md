@@ -147,6 +147,9 @@ Built so far in the Gmail add-on:
   adapts to each template's fields.
 - Carrier and client email conversations saved in the transport folder, with an
   "Update transport folder" button.
+- Carrier replies recognized and read as quotes (price, dates, availability), linked to
+  their request; personal test mode with simulated carrier replies for demos.
+- History dated by delivery date ("delivered 21.09.2026"), newest first.
 
 ## To-do
 
